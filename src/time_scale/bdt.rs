@@ -1,12 +1,11 @@
 //! Representation of BeiDou Time (BDT), which is broadcast by the BeiDou constellation.
 
 use crate::{
-    Date, Duration, Month, Seconds, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
-    units::Second,
 };
 
-pub type BeiDouTime<Representation = i64, Period = Second> = TimePoint<Bdt, Representation, Period>;
+pub type BeiDouTime = TimePoint<Bdt>;
 
 /// Time scale representing the BeiDou Time (BDT). BDT has no leap seconds and increases
 /// monotonically at a constant rate. It is distributed as part of the BeiDou broadcast messages,
@@ -21,7 +20,7 @@ impl TimeScale for Bdt {
 }
 
 impl AbsoluteTimeScale for Bdt {
-    const EPOCH: Date<i32> = match Date::from_historic_date(2006, Month::January, 1) {
+    const EPOCH: Date = match Date::from_historic_date(2006, Month::January, 1) {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
@@ -30,9 +29,7 @@ impl AbsoluteTimeScale for Bdt {
 impl UniformDateTimeScale for Bdt {}
 
 impl TerrestrialTime for Bdt {
-    type Representation = i8;
-    type Period = Second;
-    const TAI_OFFSET: Duration<Self::Representation, Self::Period> = Seconds::new(-33);
+    const TAI_OFFSET: Duration = Duration::seconds(-33);
 }
 
 /// Compares with a known timestamp as obtained from the definition of the BeiDou Time: the

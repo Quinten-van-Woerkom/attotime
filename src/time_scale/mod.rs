@@ -26,6 +26,10 @@ mod tai;
 pub use tai::{Tai, TaiTime};
 mod tcg;
 pub use tcg::{Tcg, TcgTime};
+mod tcb;
+pub use tcb::{Tcb, TcbTime};
+mod tdb;
+pub use tdb::{Tdb, TdbTime};
 mod tt;
 pub use tt::{Tt, TtTime};
 mod terrestrial_time;
@@ -57,5 +61,5 @@ pub trait AbsoluteTimeScale: TimeScale {
     /// for a time scale. For GPS, for example, the epoch is well-defined as 1980-01-06T00:00:00
     /// UTC, but it would not necessarily be wrong to use a different date here. In practice, of
     /// course, it is more convenient to choose the actual epoch where one is defined.
-    const EPOCH: Date<i32>;
+    const EPOCH: Date;
 }

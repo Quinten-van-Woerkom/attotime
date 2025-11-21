@@ -1,12 +1,11 @@
 //! Implementation of the time broadcast by the Global Positioning System (GPS).
 
 use crate::{
-    Date, Duration, Month, Seconds, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
-    units::Second,
 };
 
-pub type GpsTime<Representation = i64, Period = Second> = TimePoint<Gpst, Representation, Period>;
+pub type GpsTime = TimePoint<Gpst>;
 
 /// Time scale representing the Global Positioning System Time (GPST). GPST has no leap seconds
 /// and increases monotonically at a constant rate. It is distributed as part of the GPS broadcast
@@ -21,7 +20,7 @@ impl TimeScale for Gpst {
 }
 
 impl AbsoluteTimeScale for Gpst {
-    const EPOCH: Date<i32> = match Date::from_historic_date(1980, Month::January, 6) {
+    const EPOCH: Date = match Date::from_historic_date(1980, Month::January, 6) {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
@@ -30,9 +29,7 @@ impl AbsoluteTimeScale for Gpst {
 impl UniformDateTimeScale for Gpst {}
 
 impl TerrestrialTime for Gpst {
-    type Representation = i8;
-    type Period = Second;
-    const TAI_OFFSET: Duration<Self::Representation, Self::Period> = Seconds::new(-19);
+    const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
 
 /// Compares with a known timestamp as obtained from Vallado and McClain's "Fundamentals of
@@ -40,8 +37,7 @@ impl TerrestrialTime for Gpst {
 #[test]
 fn known_timestamps() {
     use crate::{IntoTimeScale, TaiTime};
-    let tai =
-        TaiTime::<i64, Second>::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
+    let tai = TaiTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
     let gpst = GpsTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 13).unwrap();
     assert_eq!(tai, gpst.into_time_scale());
 }

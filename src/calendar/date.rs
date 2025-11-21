@@ -5,7 +5,8 @@
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::{
-    Days, GregorianDate, HistoricDate, JulianDate, Month, TryIntoExact, WeekDay,
+    GregorianDate, HistoricDate, JulianDate, Month, WeekDay,
+    calendar::Days,
     errors::{InvalidGregorianDate, InvalidHistoricDate, InvalidJulianDate},
 };
 
@@ -22,61 +23,31 @@ use crate::{
 /// before such arithmetic is possible. It is possible to add full days to a `Date`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, derive_more::Constructor)]
 #[cfg_attr(kani, derive(kani::Arbitrary))]
-pub struct Date<Representation> {
-    time_since_epoch: Days<Representation>,
+pub struct Date {
+    days: Days,
 }
 
-impl<Representation> Date<Representation> {
+impl Date {
     /// Creates a date from the given number of days since 1970-01-01.
-    pub const fn from_time_since_epoch(time_since_epoch: Days<Representation>) -> Self {
-        Self { time_since_epoch }
+    pub const fn from_time_since_epoch(days: Days) -> Self {
+        Self { days }
     }
 
     /// The number of days since the epoch of this representation - midnight 1970.
-    pub const fn time_since_epoch(&self) -> Days<Representation>
-    where
-        Representation: Copy,
-    {
-        self.time_since_epoch
-    }
-
-    /// Casts this date into an equivalent one with another underlying representation. Only
-    /// supports lossless conversions.
-    pub fn cast<Target>(self) -> Date<Target>
-    where
-        Representation: Into<Target>,
-    {
-        Date {
-            time_since_epoch: self.time_since_epoch.cast(),
-        }
-    }
-
-    /// Casts this date into an equivalent one with another underlying representation. Only
-    /// supports lossless conversions: if the result would lose information, returns `None`.
-    pub fn try_cast<Target>(
-        self,
-    ) -> Result<Date<Target>, <Representation as TryIntoExact<Target>>::Error>
-    where
-        Representation: TryIntoExact<Target>,
-    {
-        Ok(Date {
-            time_since_epoch: self.time_since_epoch.try_cast()?,
-        })
+    pub const fn time_since_epoch(&self) -> Days {
+        self.days
     }
 
     /// Returns the number of elapsed calendar days since the passed date. Beware: the returned
     /// value represents strictly the number of elapsed calendar (!) days. While it is expressed as
     /// a duration, the possibility of leap seconds is ignored. Only interpret the returned value
     /// as an exact duration if no leap seconds occurred between both days.
-    pub fn elapsed_calendar_days_since(self, other: Self) -> Days<Representation>
-    where
-        Representation: Sub<Representation, Output = Representation> + Copy,
-    {
-        self.time_since_epoch - other.time_since_epoch
+    pub fn elapsed_calendar_days_since(self, other: Self) -> Days {
+        self.days - other.days
     }
 }
 
-impl Date<i32> {
+impl Date {
     /// Creates a `Date` based on a year-month-day date in the historic calendar.
     pub const fn from_historic_date(
         year: i32,
@@ -130,47 +101,41 @@ impl Date<i32> {
     }
 }
 
-impl<Representation> Add<Days<Representation>> for Date<Representation>
-where
-    Representation: Add<Output = Representation>,
-{
+impl Add<Days> for Date {
     type Output = Self;
 
-    fn add(self, rhs: Days<Representation>) -> Self {
+    fn add(self, rhs: Days) -> Self {
         Self {
-            time_since_epoch: self.time_since_epoch + rhs,
+            days: self.days + rhs,
         }
     }
 }
 
-impl<Representation> AddAssign<Days<Representation>> for Date<Representation>
+impl AddAssign<Days> for Date
 where
-    Days<Representation>: AddAssign,
+    Days: AddAssign,
 {
-    fn add_assign(&mut self, rhs: Days<Representation>) {
-        self.time_since_epoch += rhs;
+    fn add_assign(&mut self, rhs: Days) {
+        self.days += rhs;
     }
 }
 
-impl<Representation> Sub<Days<Representation>> for Date<Representation>
-where
-    Representation: Sub<Output = Representation>,
-{
+impl Sub<Days> for Date {
     type Output = Self;
 
-    fn sub(self, rhs: Days<Representation>) -> Self {
+    fn sub(self, rhs: Days) -> Self {
         Self {
-            time_since_epoch: self.time_since_epoch - rhs,
+            days: self.days - rhs,
         }
     }
 }
 
-impl<Representation> SubAssign<Days<Representation>> for Date<Representation>
+impl SubAssign<Days> for Date
 where
-    Days<Representation>: SubAssign,
+    Days: SubAssign,
 {
-    fn sub_assign(&mut self, rhs: Days<Representation>) {
-        self.time_since_epoch -= rhs;
+    fn sub_assign(&mut self, rhs: Days) {
+        self.days -= rhs;
     }
 }
 
@@ -224,13 +189,13 @@ mod infallibility {
 
     #[kani::proof]
     fn week_day() {
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let _week_day = date.week_day();
     }
 
     #[kani::proof]
     fn historic_date_roundtrip() {
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let historic_date = HistoricDate::from_date(date);
         let year = historic_date.year();
         let month = historic_date.month();
@@ -241,7 +206,7 @@ mod infallibility {
 
     #[kani::proof]
     fn gregorian_date_roundtrip() {
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let gregorian_date = GregorianDate::from_date(date);
         let year = gregorian_date.year();
         let month = gregorian_date.month();
@@ -252,7 +217,7 @@ mod infallibility {
 
     #[kani::proof]
     fn julian_date_roundtrip() {
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let julian_date = JulianDate::from_date(date);
         let year = julian_date.year();
         let month = julian_date.month();

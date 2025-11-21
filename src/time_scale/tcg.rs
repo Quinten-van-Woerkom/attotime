@@ -1,16 +1,12 @@
 //! Implementation of Geocentric Coordinate Time (TCG), describing the proper time experienced by a
 //! clock at rest in a coordinate frame co-moving with the center of the Earth.
 
-use core::ops::{Add, Sub};
-
 use crate::{
-    ConvertUnit, Date, Fraction, FromTimeScale, IntoTimeScale, MilliSeconds, Month, MulRound,
-    TerrestrialTime, TimePoint, TryFromExact, Tt, TtTime,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint, TtTime,
     time_scale::{AbsoluteTimeScale, TimeScale, datetime::UniformDateTimeScale},
-    units::{Milli, Second, SecondsPerDay},
 };
 
-pub type TcgTime<Representation = i64, Period = Second> = TimePoint<Tcg, Representation, Period>;
+pub type TcgTime = TimePoint<Tcg>;
 
 /// Time scale representing the Geocentric Coordinate Time (TCG). This scale is equivalent to the
 /// proper time as experienced by an (idealistic) clock outside of Earth's gravity well, but
@@ -27,7 +23,7 @@ impl TimeScale for Tcg {
 }
 
 impl AbsoluteTimeScale for Tcg {
-    const EPOCH: Date<i32> = match Date::from_historic_date(1977, Month::January, 1) {
+    const EPOCH: Date = match Date::from_historic_date(1977, Month::January, 1) {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
@@ -35,78 +31,58 @@ impl AbsoluteTimeScale for Tcg {
 
 impl UniformDateTimeScale for Tcg {}
 
-/// This constant describes the rate difference of terrestrial time with respect to TCG. It is the
-/// number of seconds that terrestrial time is slower per second.
-const L_G: Fraction = Fraction::new(3_484_645_067, 5_000_000_000_000_000_000);
-const L_G_INV: Fraction = Fraction::new(3_484_645_067, 4_999_999_996_515_354_933);
+const fn div_round(numerator: i128, denominator: i128) -> i128 {
+    (numerator + denominator / 2) / denominator
+}
 
-impl<Representation, Period> TcgTime<Representation, Period>
-where
-    Representation: Copy
-        + From<u16>
-        + Add<Representation, Output = Representation>
-        + Sub<Representation, Output = Representation>
-        + ConvertUnit<Milli, Period>
-        + MulRound<Fraction, Output = Representation>,
-{
-    fn into_tt(self) -> TtTime<Representation, Period> {
-        let epoch_offset = MilliSeconds::new(32_184u16).cast().into_unit();
+impl TcgTime {
+    fn into_tt(self) -> TtTime {
+        let epoch_offset = Duration::milliseconds(32_184);
         let tcg_since_1977_01_01 = self.time_since_epoch();
         let tcg_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01 - epoch_offset;
-        let rate_difference = tcg_since_1977_01_01_00_00_32_184.mul_round(L_G);
+        let rate_difference = div_round(
+            tcg_since_1977_01_01_00_00_32_184.count() * 3_484_645_067,
+            5_000_000_000_000_000_000,
+        );
+        let rate_difference = Duration::attoseconds(rate_difference);
         let tt_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01_00_00_32_184 - rate_difference;
         TtTime::from_time_since_epoch(epoch_offset) + tt_since_1977_01_01_00_00_32_184
     }
 
-    fn from_tt(tt_time: TtTime<Representation, Period>) -> Self {
-        let epoch_offset = MilliSeconds::new(32_184u16).cast().into_unit();
+    fn from_tt(tt_time: TtTime) -> Self {
+        let epoch_offset = Duration::milliseconds(32_184);
         let tt_since_1977_01_01 = tt_time.time_since_epoch();
         let tt_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01 - epoch_offset;
-        let rate_difference = tt_since_1977_01_01_00_00_32_184.mul_round(L_G_INV);
+        println!(
+            "TT: {:?}, max: {:?}",
+            tt_since_1977_01_01_00_00_32_184,
+            i128::MAX / 3_484_645_067
+        );
+        let rate_difference = div_round(
+            tt_since_1977_01_01_00_00_32_184.count() * 3_484_645_067,
+            4_999_999_996_515_354_933,
+        );
+        let rate_difference = Duration::attoseconds(rate_difference);
         let tcg_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01_00_00_32_184 + rate_difference;
         TcgTime::from_time_since_epoch(epoch_offset) + tcg_since_1977_01_01_00_00_32_184
     }
 }
 
-impl<Scale, Representation, Period> FromTimeScale<Scale, Representation, Period>
-    for TcgTime<Representation, Period>
+impl<Scale> FromTimeScale<Scale> for TcgTime
 where
     Scale: TerrestrialTime,
-    Representation: Copy
-        + Add<Representation, Output = Representation>
-        + Sub<Representation, Output = Representation>
-        + From<<Tt as TerrestrialTime>::Representation>
-        + From<Scale::Representation>
-        + TryFromExact<i32>
-        + ConvertUnit<<Tt as TerrestrialTime>::Period, Period>
-        + ConvertUnit<Scale::Period, Period>
-        + ConvertUnit<SecondsPerDay, Period>
-        + PartialOrd
-        + MulRound<Fraction, Output = Representation>,
 {
-    fn from_time_scale(time_point: TimePoint<Scale, Representation, Period>) -> Self {
+    fn from_time_scale(time_point: TimePoint<Scale>) -> Self {
         let tt_time = TtTime::from_time_scale(time_point);
         Self::from_tt(tt_time)
     }
 }
 
-impl<Scale, Representation, Period> FromTimeScale<Tcg, Representation, Period>
-    for TimePoint<Scale, Representation, Period>
+impl<Scale> FromTimeScale<Tcg> for TimePoint<Scale>
 where
     Scale: TerrestrialTime,
-    Representation: Copy
-        + Add<Representation, Output = Representation>
-        + Sub<Representation, Output = Representation>
-        + MulRound<Fraction, Output = Representation>
-        + From<<Tt as TerrestrialTime>::Representation>
-        + From<Scale::Representation>
-        + TryFromExact<i32>
-        + ConvertUnit<<Tt as TerrestrialTime>::Period, Period>
-        + ConvertUnit<Scale::Period, Period>
-        + ConvertUnit<SecondsPerDay, Period>
-        + PartialOrd,
 {
-    fn from_time_scale(tcg_time: TcgTime<Representation, Period>) -> Self {
+    fn from_time_scale(tcg_time: TcgTime) -> Self {
         let tt_time = tcg_time.into_tt();
         tt_time.into_time_scale()
     }
@@ -124,11 +100,11 @@ fn known_timestamps() {
         0,
         0,
         32,
-        MilliSeconds::new(184i64),
+        Duration::milliseconds(184),
     )
     .unwrap();
-    let tai_tt: TtTime<_, _> = tai.into_unit().into_time_scale();
-    let tcg_tt: TtTime<_, _> = tcg.into_time_scale();
+    let tai_tt: TtTime = tai.into_time_scale();
+    let tcg_tt: TtTime = tcg.into_time_scale();
     assert_eq!(tai_tt, tcg_tt);
 
     let tt = TtTime::from_fine_historic_datetime(
@@ -138,7 +114,7 @@ fn known_timestamps() {
         0,
         0,
         32,
-        MilliSeconds::new(184),
+        Duration::milliseconds(184),
     )
     .unwrap();
     let tcg = TcgTime::from_fine_historic_datetime(
@@ -148,7 +124,7 @@ fn known_timestamps() {
         0,
         0,
         32,
-        MilliSeconds::new(184i64),
+        Duration::milliseconds(184),
     )
     .unwrap();
     assert_eq!(tt, tcg.into_time_scale());
@@ -161,10 +137,10 @@ fn check_roundtrip() {
     use rand::prelude::*;
     let mut rng = rand_chacha::ChaCha12Rng::seed_from_u64(44);
     for _ in 0..10_000 {
-        let milliseconds_since_epoch = rng.random::<u64>();
-        let time_since_epoch = MilliSeconds::new(milliseconds_since_epoch);
+        let attoseconds_since_epoch = rng.random::<i64>();
+        let time_since_epoch = Duration::attoseconds(attoseconds_since_epoch.into());
         let tt = TtTime::from_time_since_epoch(time_since_epoch);
-        let tcg: TcgTime<_, _> = TcgTime::from_time_scale(tt);
+        let tcg: TcgTime = TcgTime::from_time_scale(tt);
         let tt2 = tcg.into_time_scale();
         assert_eq!(tt, tt2);
     }
@@ -178,7 +154,7 @@ mod proof_harness {
     #[kani::proof]
     fn from_datetime_never_panics() {
         use crate::FromDateTime;
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let hour: u8 = kani::any();
         let minute: u8 = kani::any();
         let second: u8 = kani::any();

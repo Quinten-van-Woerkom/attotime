@@ -3,6 +3,21 @@
 version = 4
 
 [[package]]
+name = "attotime"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "lexical-core",
+ "num-integer",
+ "num-traits",
+ "paste",
+ "rand",
+ "rand_chacha",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -46,22 +61,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "finetime"
-version = "0.8.1"
-dependencies = [
- "derive_more",
- "i256",
- "lexical-core",
- "num-integer",
- "num-traits",
- "paste",
- "rand",
- "rand_chacha",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -72,12 +71,6 @@ dependencies = [
  "r-efi",
  "wasi",
 ]
-
-[[package]]
-name = "i256"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8ef3cf3581bc32d50c9e593ff6bad06c85054861ea6cc640660d73490c2c316"
 
 [[package]]
 name = "lexical-core"

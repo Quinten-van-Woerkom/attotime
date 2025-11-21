@@ -4,7 +4,7 @@
 
 use thiserror::Error;
 
-use crate::{Date, DurationDesignator, HistoricDate, Month, parse::DecimalNumber};
+use crate::{Date, HistoricDate, Month};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 #[error("{day} {month} {year} does not exist in the historic calendar")]
@@ -90,172 +90,13 @@ pub enum InvalidJulianDateTime<InvalidDateTime: core::error::Error> {
     InvalidDateTime(#[source] InvalidDateTime),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing `TimePoint`")]
-pub enum TimePointParsingError<DateTimeError> {
-    #[error(transparent)]
-    DateParsingError(#[from] HistoricDateParsingError),
-    #[error(transparent)]
-    TimeOfDayParsingError(#[from] TimeOfDayParsingError),
-    #[error("expected but did not find time designator 'T'")]
-    ExpectedTimeDesignator,
-    #[error("expected but did not find space between time-of-day and time scale designator")]
-    ExpectedSpace,
-    #[error("expected but did not find time scale designator")]
-    ExpectedTimeScaleDesignator,
-    #[error("could not parse entire string: data remains after time point")]
-    UnexpectedRemainder,
-    #[error(transparent)]
-    CannotRepresentDecimalNumber(#[from] CannotRepresentDecimalNumber),
-    DateTimeError(#[source] DateTimeError),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing `HistoricDate`")]
-pub enum HistoricDateParsingError {
-    #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
-    #[error(transparent)]
-    InvalidHistoricDate(#[from] InvalidHistoricDate),
-    #[error(transparent)]
-    InvalidMonthNumber(#[from] InvalidMonthNumber),
-    #[error("expected but did not find year-month delimiter '-'")]
-    ExpectedYearMonthDelimiter,
-    #[error("month representation must be exactly two digits")]
-    MonthRepresentationNotTwoDigits,
-    #[error("expected but did not find month-day delimiter '-'")]
-    ExpectedMonthDayDelimiter,
-    #[error("day representation must be exactly two digits")]
-    DayRepresentationNotTwoDigits,
-    #[error("could not parse entire string: data remains after historic date")]
-    UnexpectedRemainder,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing `GregorianDate`")]
-pub enum GregorianDateParsingError {
-    #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
-    #[error(transparent)]
-    InvalidGregorianDate(#[from] InvalidGregorianDate),
-    #[error(transparent)]
-    InvalidMonthNumber(#[from] InvalidMonthNumber),
-    #[error("expected but did not find year-month delimiter '-'")]
-    ExpectedYearMonthDelimiter,
-    #[error("month representation must be exactly two digits")]
-    MonthRepresentationNotTwoDigits,
-    #[error("expected but did not find month-day delimiter '-'")]
-    ExpectedMonthDayDelimiter,
-    #[error("day representation must be exactly two digits")]
-    DayRepresentationNotTwoDigits,
-    #[error("could not parse entire string: data remains after Gregorian date")]
-    UnexpectedRemainder,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing `JulianDate`")]
-pub enum JulianDateParsingError {
-    #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
-    #[error(transparent)]
-    InvalidJulianDate(#[from] InvalidJulianDate),
-    #[error(transparent)]
-    InvalidMonthNumber(#[from] InvalidMonthNumber),
-    #[error("expected but did not find year-month delimiter '-'")]
-    ExpectedYearMonthDelimiter,
-    #[error("month representation must be exactly two digits")]
-    MonthRepresentationNotTwoDigits,
-    #[error("expected but did not find month-day delimiter '-'")]
-    ExpectedMonthDayDelimiter,
-    #[error("day representation must be exactly two digits")]
-    DayRepresentationNotTwoDigits,
-    #[error("could not parse entire string: data remains after Julian date")]
-    UnexpectedRemainder,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing `TimeOfDay`")]
-pub enum TimeOfDayParsingError {
-    #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
-    #[error("hour representation must be exactly two digits")]
-    HourRepresentationNotTwoDigits,
-    #[error("expected but did not find hour-minute delimiter ':'")]
-    ExpectedHourMinuteDelimiter,
-    #[error("minute representation must be exactly two digits")]
-    MinuteRepresentationNotTwoDigits,
-    #[error("expected but did not find minute-second delimiter ':'")]
-    ExpectedMinuteSecondDelimiter,
-    #[error("integer part of the second representation must be exactly two digits")]
-    IntegerSecondRepresentationNotTwoDigits,
-    #[error("could not parse seconds component")]
-    NumberParsingError(#[from] NumberParsingError),
-    #[error("could not parse entire string: data remains after time-of-day")]
-    UnexpectedRemainder,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing `Duration`")]
-pub enum DurationParsingError {
-    #[error("input string did not start with \'P\'")]
-    ExpectedDurationPrefix,
-    #[error(transparent)]
-    DurationDesignatorParsingError(#[from] DurationDesignatorParsingError),
-    #[error(transparent)]
-    DurationComponentParsingError(#[from] DurationComponentParsingError),
-    #[error(
-        "unit designators must be provided in decreasing error, but found {current} after {previous}"
-    )]
-    NonDecreasingDesignators {
-        previous: DurationDesignator,
-        current: DurationDesignator,
-    },
-    #[error("only lowest order component may be expressed as decimal fraction")]
-    OnlyLowestOrderComponentMayHaveDecimalFraction,
-    #[error(transparent)]
-    CannotRepresentDecimalNumber(#[from] CannotRepresentDecimalNumber),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("unable to express decimal number {number:?} in underlying representation")]
-pub struct CannotRepresentDecimalNumber {
-    pub(crate) number: DecimalNumber,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("invalid duration component")]
-pub enum DurationComponentParsingError {
-    #[error(transparent)]
-    NumberParsingError(#[from] NumberParsingError),
-    #[error(transparent)]
-    DurationDesignatorParsingError(#[from] DurationDesignatorParsingError),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
-#[error("invalid duration designator")]
-pub enum DurationDesignatorParsingError {
-    #[error("unexpected character: {character}")]
-    UnexpectedCharacter { character: char },
-    #[error("unexpected end-of-string")]
-    UnexpectedEndOfString,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
-#[error("error parsing number")]
-pub enum NumberParsingError {
-    #[error(transparent)]
-    ParsingError(#[from] lexical_core::Error),
-    #[error("too many fractional digits: {fractional_digits}, only `i32::MAX` are supported")]
-    TooManyFractionalDigits { fractional_digits: usize },
-}
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 pub enum InvalidUtcDateTime {
     #[error("invalid time-of-day")]
     InvalidTimeOfDay(#[from] InvalidTimeOfDay),
-    #[error("not a valid UTC leap second date-time: {}T{hour:02}-{minute:02}-{second:02}", <Date<i32> as Into<HistoricDate>>::into(*date))]
+    #[error("not a valid UTC leap second date-time: {}T{hour:02}-{minute:02}-{second:02}", <Date as Into<HistoricDate>>::into(*date))]
     NonLeapSecondDateTime {
-        date: Date<i32>,
+        date: Date,
         hour: u8,
         minute: u8,
         second: u8,
@@ -266,9 +107,9 @@ pub enum InvalidUtcDateTime {
 pub enum InvalidGlonassDateTime {
     #[error("invalid time-of-day")]
     InvalidTimeOfDay(#[from] InvalidTimeOfDay),
-    #[error("not a valid GLONASST leap second date-time: {}T{hour:02}-{minute:02}-{second:02}", <Date<i32> as Into<HistoricDate>>::into(*date))]
+    #[error("not a valid GLONASST leap second date-time: {}T{hour:02}-{minute:02}-{second:02}", <Date as Into<HistoricDate>>::into(*date))]
     NonLeapSecondDateTime {
-        date: Date<i32>,
+        date: Date,
         hour: u8,
         minute: u8,
         second: u8,

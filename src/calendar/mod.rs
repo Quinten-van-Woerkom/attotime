@@ -3,14 +3,14 @@
 
 mod date;
 pub use date::Date;
+mod days;
+pub use days::Days;
 mod gregorian;
 pub use gregorian::GregorianDate;
 mod historic;
 pub use historic::HistoricDate;
 mod julian;
 pub use julian::JulianDate;
-mod julian_day;
-pub use julian_day::JulianDay;
 mod modified_julian_date;
 pub use modified_julian_date::ModifiedJulianDate;
 mod month;

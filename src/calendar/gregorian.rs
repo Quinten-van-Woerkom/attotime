@@ -3,8 +3,8 @@
 
 use crate::{
     Date, Month,
+    calendar::Days,
     calendar::historic::month_day_from_ordinal_date,
-    duration::Days,
     errors::{InvalidDayOfYear, InvalidGregorianDate},
 };
 
@@ -35,11 +35,11 @@ impl GregorianDate {
         }
     }
 
-    /// Constructs a Gregorian date from a given `Date<i32>` instance. Useful primarily when an
+    /// Constructs a Gregorian date from a given `Date` instance. Useful primarily when an
     /// existing `Date` must be printed in human-readable format.
     ///
     /// Uses Howard Hinnant's `civil_from_days` algorithm.
-    pub const fn from_date(date: Date<i32>) -> Self {
+    pub const fn from_date(date: Date) -> Self {
         let days = date.time_since_epoch().count();
         // Shift epoch from 1970-01-01 to 0000-03-01
         let z = days as i64 + 719468; // 719468 days from 0000-03-01 to 1970-01-01
@@ -64,7 +64,7 @@ impl GregorianDate {
 
     /// Constructs a `Date` from a given Gregorian date. Uses Howard Hinnant's `days_from_civil`
     /// algorithm.
-    pub const fn into_date(&self) -> Date<i32> {
+    pub const fn into_date(&self) -> Date {
         let mut year = self.year;
         let month = self.month as i32;
         let day = self.day as i32;
@@ -142,14 +142,14 @@ impl GregorianDate {
     }
 }
 
-impl From<GregorianDate> for Date<i32> {
+impl From<GregorianDate> for Date {
     fn from(value: GregorianDate) -> Self {
         value.into_date()
     }
 }
 
-impl From<Date<i32>> for GregorianDate {
-    fn from(value: Date<i32>) -> Self {
+impl From<Date> for GregorianDate {
+    fn from(value: Date) -> Self {
         Self::from_date(value)
     }
 }
@@ -248,10 +248,10 @@ mod proof_harness {
     }
 
     /// Verifies that conversion to and from a `Date` is well-defined for all possible values of
-    /// `Date<i32>`: no panics, undefined behaviour, or arithmetic errors.
+    /// `Date`: no panics, undefined behaviour, or arithmetic errors.
     #[kani::proof]
     fn date_conversion_well_defined() {
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let gregorian_date = GregorianDate::from_date(date);
         let _ = gregorian_date.into_date();
     }

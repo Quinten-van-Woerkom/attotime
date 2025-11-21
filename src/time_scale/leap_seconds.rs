@@ -1,7 +1,7 @@
 //! Leap seconds are applied when converting date-time pairs to underlying time scales, to better
 //! align those time scales with the human-centric time based on the Earth's rotation (UT1).
 
-use crate::{Date, FromDateTime, IntoDateTime, Second, Seconds, UtcTime};
+use crate::{Date, Duration, FromDateTime, IntoDateTime, UtcTime};
 
 /// Since leap seconds are hard to predict in advance (due to irregular variations in the Earth's
 /// rotation), their insertion and deletion is based on short-term predictions. This means that
@@ -18,11 +18,11 @@ pub trait LeapSecondProvider {
     /// For any given date (expressed in UTC), determines whether a leap second was inserted at the
     /// end of that day. In tandem, returns the accumulated number of leap seconds before (!) that
     /// date.
-    fn leap_seconds_on_date(&self, utc_date: Date<i32>) -> (bool, Seconds<u8>);
+    fn leap_seconds_on_date(&self, utc_date: Date) -> (bool, i32);
 
     /// Given some UTC time, returns the number of leap seconds that apply, and whether the
     /// requested date-time is a leap second (exactly).
-    fn leap_seconds_at_time(&self, utc_time: UtcTime<i64, Second>) -> (bool, Seconds<u8>);
+    fn leap_seconds_at_time(&self, utc_time: UtcTime) -> (bool, i32);
 }
 
 /// This trait is the leap second equivalent of `FromDateTime`. It permits the creation of time
@@ -37,7 +37,7 @@ pub trait FromLeapSecondDateTime: Sized {
     /// Takes a leap second provider as additional argument, which is used to determine at which
     /// times leap seconds are inserted or deleted.
     fn from_datetime(
-        date: Date<i32>,
+        date: Date,
         hour: u8,
         minute: u8,
         second: u8,
@@ -52,12 +52,7 @@ where
 {
     type Error = <TimePoint as FromLeapSecondDateTime>::Error;
 
-    fn from_datetime(
-        date: Date<i32>,
-        hour: u8,
-        minute: u8,
-        second: u8,
-    ) -> Result<Self, Self::Error> {
+    fn from_datetime(date: Date, hour: u8, minute: u8, second: u8) -> Result<Self, Self::Error> {
         FromLeapSecondDateTime::from_datetime(
             date,
             hour,
@@ -77,10 +72,7 @@ pub trait IntoLeapSecondDateTime: IntoDateTime {
     ///
     /// Takes a leap second provider as additional argument, which is used to determine at which
     /// times leap seconds are inserted or deleted.
-    fn into_datetime(
-        self,
-        leap_second_provider: &impl LeapSecondProvider,
-    ) -> (Date<i32>, u8, u8, u8);
+    fn into_datetime(self, leap_second_provider: &impl LeapSecondProvider) -> (Date, u8, u8, u8);
 }
 
 /// We provide a default implementation that uses the static leap second provider.
@@ -88,7 +80,7 @@ impl<TimePoint> IntoDateTime for TimePoint
 where
     TimePoint: IntoLeapSecondDateTime,
 {
-    fn into_datetime(self) -> (Date<i32>, u8, u8, u8) {
+    fn into_datetime(self) -> (Date, u8, u8, u8) {
         IntoLeapSecondDateTime::into_datetime(self, &StaticLeapSecondProvider {})
     }
 }
@@ -104,11 +96,11 @@ pub const STATIC_LEAP_SECOND_PROVIDER: StaticLeapSecondProvider = StaticLeapSeco
 
 impl LeapSecondProvider for StaticLeapSecondProvider {
     /// For the static leap seconds provider, we just use a generated jump table that maps from
-    /// days (expressed as `Date<i32>`, i.e., `Days<i32>` since 1970-01-01) to whether that day
+    /// days (expressed as `Date`, i.e., `Days` since 1970-01-01) to whether that day
     /// contains a leap second and what the total leap second count is. It is sorted in reverse,
     /// because it is more likely for users to work with dates in the present or future than in the
     /// past.
-    fn leap_seconds_on_date(&self, utc_date: Date<i32>) -> (bool, Seconds<u8>) {
+    fn leap_seconds_on_date(&self, utc_date: Date) -> (bool, i32) {
         let days_since_1970_01_01 = utc_date.time_since_epoch().count();
         let (is_leap_second, leap_seconds) = match days_since_1970_01_01 {
             17167.. => (false, 37),
@@ -169,15 +161,15 @@ impl LeapSecondProvider for StaticLeapSecondProvider {
             729 => (true, 9),
             _ => (false, 9),
         };
-        (is_leap_second, Seconds::new(leap_seconds))
+        (is_leap_second, leap_seconds)
     }
 
     /// To determine the leap second offset applicable at a given time, we just use a generated
     /// jump table, similar to the date-to-leap-seconds conversion. Note that leap seconds are
     /// applied only after the leap second itself: during a leap second, the count is still the
     /// same as before.
-    fn leap_seconds_at_time(&self, utc_time: UtcTime<i64, Second>) -> (bool, Seconds<u8>) {
-        let seconds_since_1972_01_01 = utc_time.time_since_epoch().count();
+    fn leap_seconds_at_time(&self, utc_time: UtcTime) -> (bool, i32) {
+        let seconds_since_1972_01_01 = utc_time.time_since_epoch() / Duration::seconds(1);
         let (is_leap_second, leap_seconds) = match seconds_since_1972_01_01 {
             1420156837.. => (false, 37),
             1420156836 => (true, 36),
@@ -237,6 +229,6 @@ impl LeapSecondProvider for StaticLeapSecondProvider {
             9 => (true, 9),
             _ => (false, 9),
         };
-        (is_leap_second, Seconds::new(leap_seconds))
+        (is_leap_second, leap_seconds)
     }
 }

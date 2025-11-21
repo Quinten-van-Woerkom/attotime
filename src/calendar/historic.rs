@@ -56,9 +56,9 @@ impl HistoricDate {
         }
     }
 
-    pub const fn from_date(date: Date<i32>) -> Self {
+    pub const fn from_date(date: Date) -> Self {
         // Determine which calendar applies: Julian or Gregorian
-        const GREGORIAN_REFORM: Date<i32> = match GregorianDate::new(1582, Month::October, 15) {
+        const GREGORIAN_REFORM: Date = match GregorianDate::new(1582, Month::October, 15) {
             Ok(date) => date.into_date(),
             Err(_) => unreachable!(),
         };
@@ -86,7 +86,7 @@ impl HistoricDate {
     /// on the approach described by Meeus in Astronomical Algorithms (Chapter 7, Julian Day). This
     /// variation adapts the algorithm to the Unix epoch and removes the dependency on floating
     /// point arithmetic.
-    pub const fn into_date(self) -> Date<i32> {
+    pub const fn into_date(self) -> Date {
         let HistoricDate { year, month, day } = self;
         if self.is_gregorian() {
             match GregorianDate::new(year, month, day) {
@@ -216,14 +216,14 @@ pub(crate) const fn month_day_from_ordinal_date(
     Ok((month, day))
 }
 
-impl From<HistoricDate> for Date<i32> {
+impl From<HistoricDate> for Date {
     fn from(value: HistoricDate) -> Self {
         value.into_date()
     }
 }
 
-impl From<Date<i32>> for HistoricDate {
-    fn from(value: Date<i32>) -> Self {
+impl From<Date> for HistoricDate {
+    fn from(value: Date) -> Self {
         Self::from_date(value)
     }
 }
@@ -311,10 +311,10 @@ mod proof_harness {
     }
 
     /// Verifies that conversion to and from a `Date` is well-defined for all possible values of
-    /// `Date<i32>`: no panics, undefined behaviour, or arithmetic errors.
+    /// `Date`: no panics, undefined behaviour, or arithmetic errors.
     #[kani::proof]
     fn date_conversion_well_defined() {
-        let date: Date<i32> = kani::any();
+        let date: Date = kani::any();
         let historic_date = HistoricDate::from_date(date);
         let _ = historic_date.into_date();
     }

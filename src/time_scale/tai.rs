@@ -1,12 +1,13 @@
 //! Implementation of International Atomic Time (TAI).
 
+use num_traits::ConstZero;
+
 use crate::{
-    Date, Duration, Month, TimePoint, Years,
+    Date, Duration, Month, TimePoint,
     time_scale::{AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale},
-    units::{Second, SecondsPerYear},
 };
 
-pub type TaiTime<Representation = i64, Period = Second> = TimePoint<Tai, Representation, Period>;
+pub type TaiTime = TimePoint<Tai>;
 
 /// Time scale representing the International Atomic Time standard (TAI). TAI has no leap seconds
 /// and increases monotonically at a constant rate. This makes it highly suitable for scientific
@@ -21,7 +22,7 @@ impl TimeScale for Tai {
 }
 
 impl AbsoluteTimeScale for Tai {
-    const EPOCH: Date<i32> = match Date::from_historic_date(1958, Month::January, 1) {
+    const EPOCH: Date = match Date::from_historic_date(1958, Month::January, 1) {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
@@ -30,9 +31,7 @@ impl AbsoluteTimeScale for Tai {
 impl UniformDateTimeScale for Tai {}
 
 impl TerrestrialTime for Tai {
-    type Representation = u8;
-    type Period = SecondsPerYear;
-    const TAI_OFFSET: Duration<Self::Representation, Self::Period> = Years::new(0);
+    const TAI_OFFSET: Duration = Duration::ZERO;
 }
 
 /// Test function that verifies whether a given Gregorian date-time maps to the provided time since
@@ -45,7 +44,7 @@ fn check_gregorian_datetime(
     hour: u8,
     minute: u8,
     second: u8,
-    time_since_epoch: crate::duration::Seconds<i64>,
+    time_since_epoch: Duration,
 ) {
     assert_eq!(
         TaiTime::from_gregorian_datetime(year, month, day, hour, minute, second)
@@ -60,18 +59,17 @@ fn check_gregorian_datetime(
 #[test]
 fn known_timestamps() {
     use crate::Month::*;
-    use crate::duration::Seconds;
 
-    check_gregorian_datetime(1958, January, 1, 0, 0, 0, Seconds::new(0));
-    check_gregorian_datetime(1958, January, 2, 0, 0, 0, Seconds::new(86400));
-    check_gregorian_datetime(1960, January, 1, 0, 0, 0, Seconds::new(63072000));
-    check_gregorian_datetime(1961, January, 1, 0, 0, 0, Seconds::new(94694400));
-    check_gregorian_datetime(1970, January, 1, 0, 0, 0, Seconds::new(378691200));
-    check_gregorian_datetime(1976, January, 1, 0, 0, 0, Seconds::new(567993600));
-    check_gregorian_datetime(2025, July, 16, 16, 23, 24, Seconds::new(2131374204));
-    check_gregorian_datetime(2034, December, 26, 8, 2, 37, Seconds::new(2429424157));
-    check_gregorian_datetime(2760, April, 1, 21, 59, 58, Seconds::new(25316575198));
-    check_gregorian_datetime(1643, January, 4, 1, 1, 33, Seconds::new(-9940143507));
+    check_gregorian_datetime(1958, January, 1, 0, 0, 0, Duration::seconds(0));
+    check_gregorian_datetime(1958, January, 2, 0, 0, 0, Duration::seconds(86400));
+    check_gregorian_datetime(1960, January, 1, 0, 0, 0, Duration::seconds(63072000));
+    check_gregorian_datetime(1961, January, 1, 0, 0, 0, Duration::seconds(94694400));
+    check_gregorian_datetime(1970, January, 1, 0, 0, 0, Duration::seconds(378691200));
+    check_gregorian_datetime(1976, January, 1, 0, 0, 0, Duration::seconds(567993600));
+    check_gregorian_datetime(2025, July, 16, 16, 23, 24, Duration::seconds(2131374204));
+    check_gregorian_datetime(2034, December, 26, 8, 2, 37, Duration::seconds(2429424157));
+    check_gregorian_datetime(2760, April, 1, 21, 59, 58, Duration::seconds(25316575198));
+    check_gregorian_datetime(1643, January, 4, 1, 1, 33, Duration::seconds(-9940143507));
 }
 
 #[cfg(test)]
@@ -86,8 +84,7 @@ fn gregorian_datetime_roundtrip(
     use crate::GregorianDate;
     use crate::IntoDateTime;
 
-    let time =
-        TaiTime::<i64, _>::from_gregorian_datetime(year, month, day, hour, minute, second).unwrap();
+    let time = TaiTime::from_gregorian_datetime(year, month, day, hour, minute, second).unwrap();
     let (date, hour2, minute2, second2) = time.into_datetime();
     let gregorian_date = GregorianDate::from_date(date);
     assert_eq!(gregorian_date.year(), year);

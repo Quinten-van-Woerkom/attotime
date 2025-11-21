@@ -2,12 +2,11 @@
 //! Quasi-Zenith Satellite System constellation.
 
 use crate::{
-    Date, Duration, Month, Seconds, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
-    units::Second,
 };
 
-pub type QzssTime<Representation = i64, Period = Second> = TimePoint<Qzsst, Representation, Period>;
+pub type QzssTime = TimePoint<Qzsst>;
 
 /// Time scale representing the Quasi-Zenith Satellite System Time (QZSST). QZSST has no leap
 /// seconds and increases monotonically at a constant rate. It is distributed as part of the QZSST
@@ -22,7 +21,7 @@ impl TimeScale for Qzsst {
 }
 
 impl AbsoluteTimeScale for Qzsst {
-    const EPOCH: Date<i32> = match Date::from_historic_date(1999, Month::August, 22) {
+    const EPOCH: Date = match Date::from_historic_date(1999, Month::August, 22) {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
@@ -31,9 +30,7 @@ impl AbsoluteTimeScale for Qzsst {
 impl UniformDateTimeScale for Qzsst {}
 
 impl TerrestrialTime for Qzsst {
-    type Representation = i8;
-    type Period = Second;
-    const TAI_OFFSET: Duration<Self::Representation, Self::Period> = Seconds::new(-19);
+    const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
 
 /// Compares with a known timestamp as obtained from Vallado and McClain's "Fundamentals of
@@ -42,8 +39,7 @@ impl TerrestrialTime for Qzsst {
 #[test]
 fn known_timestamps() {
     use crate::{IntoTimeScale, TaiTime};
-    let tai =
-        TaiTime::<i64, Second>::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
+    let tai = TaiTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
     let qzsst = QzssTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 13).unwrap();
     assert_eq!(tai, qzsst.into_time_scale());
 }
