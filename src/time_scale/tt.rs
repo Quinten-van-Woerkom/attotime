@@ -103,7 +103,7 @@ mod proof_harness {
     /// the equivalent TAI time.
     #[kani::proof]
     fn datetime_tai_roundtrip() {
-        use crate::{FromDateTime, IntoTimeScale};
+        use crate::FromDateTime;
         let date: Date = kani::any();
         let hour: u8 = kani::any();
         let minute: u8 = kani::any();
