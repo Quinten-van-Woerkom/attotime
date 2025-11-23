@@ -1,7 +1,7 @@
 //! Implementation of the GLONASS Time (GLONASST) time scale.
 
 use crate::{
-    Days, Duration, FromLeapSecondDateTime, IntoLeapSecondDateTime, IntoTimeScale,
+    Days, Duration, FromLeapSecondDateTime, FromTimeScale, IntoLeapSecondDateTime, IntoTimeScale,
     LeapSecondProvider, Second, TerrestrialTime, TimePoint,
     calendar::{Date, Month},
     errors::{InvalidGlonassDateTime, InvalidTimeOfDay},
@@ -30,6 +30,22 @@ impl AbsoluteTimeScale for Glonasst {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
+}
+
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_glonasst(time_point: GlonassTime) -> Self
+    where
+        Self: FromTimeScale<Glonasst>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_glonasst(self) -> GlonassTime
+    where
+        Self: IntoTimeScale<Glonasst>,
+    {
+        self.into_time_scale()
+    }
 }
 
 impl TerrestrialTime for Glonasst {
@@ -95,7 +111,7 @@ impl IntoLeapSecondDateTime for GlonassTime {
         // Step-by-step factoring of the time since epoch into days, hours, minutes, and seconds.
         let seconds_since_scale_epoch = self.time_since_epoch();
 
-        let utc_time = self.into_time_scale();
+        let utc_time = self.into_utc();
         let (is_leap_second, leap_seconds) = leap_second_provider.leap_seconds_at_time(utc_time);
         let leap_seconds = Duration::seconds(leap_seconds.into());
 
@@ -143,14 +159,14 @@ impl IntoLeapSecondDateTime for GlonassTime {
 /// both times, and we also verify that the second is really the zero-duration point of this type.
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, UtcTime};
+    use crate::UtcTime;
     let utc = UtcTime::from_historic_datetime(1996, Month::January, 1, 0, 0, 0).unwrap();
     let glonasst = GlonassTime::from_historic_datetime(1996, Month::January, 1, 3, 0, 0).unwrap();
-    assert_eq!(utc.into_time_scale(), glonasst);
+    assert_eq!(utc.into_glonasst(), glonasst);
 
     let utc = UtcTime::from_historic_datetime(1995, Month::December, 31, 21, 0, 0).unwrap();
     let glonasst = GlonassTime::from_historic_datetime(1996, Month::January, 1, 0, 0, 0).unwrap();
-    assert_eq!(utc, glonasst.into_time_scale());
+    assert_eq!(utc, glonasst.into_utc());
     // At the epoch time, 29 leap seconds are applied - this is the only offset that remains.
     assert_eq!(glonasst.time_since_epoch(), Duration::seconds(29));
 }

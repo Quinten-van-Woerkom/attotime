@@ -1,7 +1,8 @@
 //! Implementation of the time broadcast by the Global Positioning System (GPS).
 
 use crate::{
-    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint,
+    UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
 };
 
@@ -28,6 +29,22 @@ impl AbsoluteTimeScale for Gpst {
 
 impl UniformDateTimeScale for Gpst {}
 
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_gpst(time_point: GpsTime) -> Self
+    where
+        Self: FromTimeScale<Gpst>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_gpst(self) -> GpsTime
+    where
+        Self: IntoTimeScale<Gpst>,
+    {
+        self.into_time_scale()
+    }
+}
+
 impl TerrestrialTime for Gpst {
     const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
@@ -36,8 +53,8 @@ impl TerrestrialTime for Gpst {
 /// Astrodynamics".
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, TaiTime};
+    use crate::TaiTime;
     let tai = TaiTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
     let gpst = GpsTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 13).unwrap();
-    assert_eq!(tai, gpst.into_time_scale());
+    assert_eq!(tai, gpst.into_tai());
 }

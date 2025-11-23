@@ -3,8 +3,8 @@
 use num_traits::ConstZero;
 
 use crate::{
-    Date, Days, Duration, FromDateTime, IntoDateTime, LeapSecondProvider, Month, Second,
-    StaticLeapSecondProvider, TerrestrialTime, TimePoint,
+    Date, Days, Duration, FromDateTime, FromTimeScale, IntoDateTime, IntoTimeScale,
+    LeapSecondProvider, Month, Second, StaticLeapSecondProvider, TerrestrialTime, TimePoint,
     errors::{InvalidTimeOfDay, InvalidUtcDateTime},
     time_scale::{AbsoluteTimeScale, TimeScale},
     units::{SecondsPerDay, SecondsPerHour, SecondsPerMinute},
@@ -45,6 +45,22 @@ impl AbsoluteTimeScale for Utc {
         Ok(epoch) => epoch,
         Err(_) => unreachable!(),
     };
+}
+
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_utc(time_point: UtcTime) -> Self
+    where
+        Self: FromTimeScale<Utc>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_utc(self) -> UtcTime
+    where
+        Self: IntoTimeScale<Utc>,
+    {
+        self.into_time_scale()
+    }
 }
 
 impl TerrestrialTime for Utc {
@@ -194,7 +210,7 @@ fn trivial_times() {
 #[test]
 fn tai_roundtrip_near_leap_seconds() {
     use crate::Month::*;
-    use crate::{FromTimeScale, HistoricDate, IntoTimeScale, TaiTime};
+    use crate::{FromTimeScale, HistoricDate, TaiTime};
     // Leap second insertion of June 2015.
     let date = HistoricDate::new(2015, June, 30).unwrap().into();
     let date2 = HistoricDate::new(2015, July, 1).unwrap().into();
@@ -216,7 +232,7 @@ fn tai_roundtrip_near_leap_seconds() {
 
     for &time in times.iter() {
         let tai = TaiTime::from_time_scale(time);
-        let time2 = tai.into_time_scale();
+        let time2 = tai.into_utc();
         assert_eq!(time, time2);
     }
 }

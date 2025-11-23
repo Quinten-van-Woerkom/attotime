@@ -21,7 +21,7 @@ Note that constructing time points from datetimes may fail, because the given ar
 A wide variety of time scales may be encountered in the context of precise timekeeping.
 `attotime` provides implementations for the most prevalent time scales: UTC, TAI, terrestrial time (TT), GPS time (GPST), and most other GNSS time scales.
 Unix time is explicitly not included, as it is not a continuous time scale: the difference between two Unix times does not reflect the physically elapsed time, because leap seconds are not accounted for.
-Where possible, times can be converted between time scales using the `into_time_scale()` function.
+Where possible, times can be converted between time scales using the `into_time_scale()` function, or the equivalent `into_<scale>()` functions.
 ```rust
 use attotime::{GalileoTime, GpsTime, TaiTime, UtcTime, Month, IntoTimeScale, Second};
 let epoch_utc = UtcTime::from_historic_datetime(2025, Month::August, 3, 20, 25, 42).unwrap();
@@ -29,20 +29,18 @@ let epoch_tai = TaiTime::from_historic_datetime(2025, Month::August, 3, 20, 26, 
 let epoch_gps = GpsTime::from_historic_datetime(2025, Month::August, 3, 20, 26, 0).unwrap();
 let epoch_galileo = GalileoTime::from_historic_datetime(2025, Month::August, 3, 20, 26, 0).unwrap();
 assert_eq!(epoch_utc.into_time_scale(), epoch_tai);
-assert_eq!(epoch_utc.into_time_scale(), epoch_gps);
-assert_eq!(epoch_utc.into_time_scale(), epoch_galileo);
+assert_eq!(epoch_utc.into_gpst(), epoch_gps);
+assert_eq!(epoch_utc.into_gst(), epoch_galileo);
 ```
 If a desired time scale is not present, users may provide their own by implementing the `TimeScale` trait. To support calendrical functionality, it is additionally necessary to implement the `AbsoluteTimeScale` trait.
 
-There is also support for subsecond datetime values, and conversion into more fine-grained `TimePoint` types to support higher-fidelity time types.
+There is also support for subsecond datetime values:
 ```rust
-use attotime::{UtcTime, TtTime, Month, IntoTimeScale, Duration};
+use attotime::{UtcTime, TtTime, Month, Duration};
 let epoch_utc = UtcTime::from_historic_datetime(2025, Month::August, 3, 20, 25, 42).unwrap();
 let epoch_tt = TtTime::from_fine_historic_datetime(2025, Month::August, 3, 20, 26, 51, Duration::milliseconds(184)).unwrap();
-assert_eq!(epoch_utc.into_time_scale(), epoch_tt);
+assert_eq!(epoch_utc.into_tt(), epoch_tt);
 ```
-These conversions must always be performed explicitly via the `into_unit()` method: this ensures that units are not accidentally mixed. If this is not done, `attotime` simply refuses to compile unit-ambiguous expressions.
-Exact integer arithmetic is supported to ensure the absence of round-off errors when converting between units.
 
 ## Expressing durations
 Within `attotime`, the difference between two `TimePoint`s is expressed as a `Duration`:

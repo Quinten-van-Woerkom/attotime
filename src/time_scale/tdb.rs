@@ -2,7 +2,7 @@
 //! a clock at rest in a coordinate frame co-moving with the barycentre of the Solar system.
 
 use crate::{
-    Date, Duration, FromTimeScale, Month, Tcb, TcbTime, TimePoint, TtTime,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, Tcb, TcbTime, TimePoint, TtTime,
     time_scale::{AbsoluteTimeScale, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -30,8 +30,24 @@ impl AbsoluteTimeScale for Tdb {
 
 impl UniformDateTimeScale for Tdb {}
 
-impl TdbTime {
-    pub fn from_tcb(tcb_time: TcbTime) -> Self {
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_tdb(time_point: TdbTime) -> Self
+    where
+        Self: FromTimeScale<Tdb>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_tdb(self) -> TdbTime
+    where
+        Self: IntoTimeScale<Tdb>,
+    {
+        self.into_time_scale()
+    }
+}
+
+impl FromTimeScale<Tcb> for TdbTime {
+    fn from_time_scale(tcb_time: TcbTime) -> Self {
         const TDB0: Duration = Duration::nanoseconds(-65_500);
         const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
         let tcb_since_1977_01_01 = tcb_time.time_since_epoch();
@@ -42,29 +58,19 @@ impl TdbTime {
         let tdb_since_1977_01_01 = tdb_since_1977_01_01_00_00_32_184 + EPOCH_OFFSET;
         TdbTime::from_time_since_epoch(tdb_since_1977_01_01) + TDB0
     }
+}
 
-    pub fn into_tcb(self) -> TcbTime {
+impl FromTimeScale<Tdb> for TcbTime {
+    fn from_time_scale(time_point: TdbTime) -> Self {
         const TCB0: Duration = Duration::nanoseconds(65_500 * 12_500_000_000_000_000)
             .div_round(12_499_999_806_185_029);
         const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
-        let tdb_since_1977_01_01 = self.time_since_epoch();
+        let tdb_since_1977_01_01 = time_point.time_since_epoch();
         let tdb_since_1977_01_01_00_00_32_184 = tdb_since_1977_01_01 - EPOCH_OFFSET;
         let rate_difference =
             (tdb_since_1977_01_01_00_00_32_184 * 193_814_971).div_round(12_499_999_806_185_029);
         let difference = tdb_since_1977_01_01_00_00_32_184 + rate_difference + TCB0 + EPOCH_OFFSET;
         TcbTime::from_time_since_epoch(difference)
-    }
-}
-
-impl FromTimeScale<Tcb> for TdbTime {
-    fn from_time_scale(time_point: TcbTime) -> Self {
-        Self::from_tcb(time_point)
-    }
-}
-
-impl FromTimeScale<Tdb> for TcbTime {
-    fn from_time_scale(time_point: TdbTime) -> Self {
-        time_point.into_tcb()
     }
 }
 
@@ -167,15 +173,14 @@ fn known_tdb_to_tcb_conversion() {
 /// transformations should be each others inverse.
 #[test]
 fn roundtrip_tdb_tcb_conversion() {
-    use crate::IntoTimeScale;
     use rand::prelude::*;
     let mut rng = rand_chacha::ChaCha12Rng::seed_from_u64(44);
     for _ in 0..10_000 {
         let attoseconds_since_epoch = rng.random::<i32>();
         let time_since_epoch = Duration::attoseconds(attoseconds_since_epoch.into());
         let tdb = TdbTime::from_time_since_epoch(time_since_epoch);
-        let tcb: TcbTime = TcbTime::from_time_scale(tdb);
-        let tdb2 = tcb.into_time_scale();
+        let tcb: TcbTime = TcbTime::from_tdb(tdb);
+        let tdb2 = tcb.into_tdb();
         let difference = (tdb2 - tdb).abs();
         assert!(difference < Duration::attoseconds(10));
     }

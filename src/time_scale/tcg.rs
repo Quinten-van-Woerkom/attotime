@@ -2,7 +2,7 @@
 //! clock at rest in a coordinate frame co-moving with the center of the Earth.
 
 use crate::{
-    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint, TtTime,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TimePoint, Tt, TtTime,
     time_scale::{AbsoluteTimeScale, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -31,18 +31,24 @@ impl AbsoluteTimeScale for Tcg {
 
 impl UniformDateTimeScale for Tcg {}
 
-impl TcgTime {
-    fn into_tt(self) -> TtTime {
-        const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
-        let tcg_since_1977_01_01 = self.time_since_epoch();
-        let tcg_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01 - EPOCH_OFFSET;
-        let rate_difference = (tcg_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
-            .div_round(5_000_000_000_000_000_000);
-        let tt_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01_00_00_32_184 - rate_difference;
-        TtTime::from_time_since_epoch(tt_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_tcg(time_point: TcgTime) -> Self
+    where
+        Self: FromTimeScale<Tcg>,
+    {
+        Self::from_time_scale(time_point)
     }
 
-    fn from_tt(tt_time: TtTime) -> Self {
+    pub fn into_tcg(self) -> TcgTime
+    where
+        Self: IntoTimeScale<Tcg>,
+    {
+        self.into_time_scale()
+    }
+}
+
+impl FromTimeScale<Tt> for TcgTime {
+    fn from_time_scale(tt_time: TimePoint<Tt>) -> Self {
         const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
         let tt_since_1977_01_01 = tt_time.time_since_epoch();
         let tt_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01 - EPOCH_OFFSET;
@@ -53,30 +59,22 @@ impl TcgTime {
     }
 }
 
-impl<Scale> FromTimeScale<Scale> for TcgTime
-where
-    Scale: TerrestrialTime,
-{
-    fn from_time_scale(time_point: TimePoint<Scale>) -> Self {
-        let tt_time = TtTime::from_time_scale(time_point);
-        Self::from_tt(tt_time)
-    }
-}
-
-impl<Scale> FromTimeScale<Tcg> for TimePoint<Scale>
-where
-    Scale: TerrestrialTime,
-{
-    fn from_time_scale(tcg_time: TcgTime) -> Self {
-        let tt_time = tcg_time.into_tt();
-        tt_time.into_time_scale()
+impl FromTimeScale<Tcg> for TtTime {
+    fn from_time_scale(time_point: TimePoint<Tcg>) -> Self {
+        const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
+        let tcg_since_1977_01_01 = time_point.time_since_epoch();
+        let tcg_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01 - EPOCH_OFFSET;
+        let rate_difference = (tcg_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
+            .div_round(5_000_000_000_000_000_000);
+        let tt_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01_00_00_32_184 - rate_difference;
+        TtTime::from_time_since_epoch(tt_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
     }
 }
 
 /// Compares with a known timestamp as obtained from the definition of TCG.
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, Month, TaiTime};
+    use crate::{Month, TaiTime};
     let tai = TaiTime::from_historic_datetime(1977, Month::January, 1, 0, 0, 0).unwrap();
     let tcg = TcgTime::from_fine_historic_datetime(
         1977,
@@ -88,8 +86,8 @@ fn known_timestamps() {
         Duration::milliseconds(184),
     )
     .unwrap();
-    let tai_tt: TtTime = tai.into_time_scale();
-    let tcg_tt: TtTime = tcg.into_time_scale();
+    let tai_tt: TtTime = tai.into_tt();
+    let tcg_tt: TtTime = tcg.into_tt();
     assert_eq!(tai_tt, tcg_tt);
 
     let tt = TtTime::from_fine_historic_datetime(
@@ -112,21 +110,20 @@ fn known_timestamps() {
         Duration::milliseconds(184),
     )
     .unwrap();
-    assert_eq!(tt, tcg.into_time_scale());
+    assert_eq!(tt, tcg.into_tt());
 }
 
 /// Verifies that conversion to and from TCG/TAI preserves identity.
 #[test]
 fn check_roundtrip() {
-    use crate::IntoTimeScale;
     use rand::prelude::*;
     let mut rng = rand_chacha::ChaCha12Rng::seed_from_u64(44);
     for _ in 0..10_000 {
         let attoseconds_since_epoch = rng.random::<i64>();
         let time_since_epoch = Duration::attoseconds(attoseconds_since_epoch.into());
         let tt = TtTime::from_time_since_epoch(time_since_epoch);
-        let tcg: TcgTime = TcgTime::from_time_scale(tt);
-        let tt2 = tcg.into_time_scale();
+        let tcg: TcgTime = TcgTime::from_tt(tt);
+        let tt2 = tcg.into_tt();
         assert_eq!(tt, tt2);
     }
 }

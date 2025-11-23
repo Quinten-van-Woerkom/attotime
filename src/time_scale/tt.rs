@@ -1,7 +1,7 @@
 //! Implementation of Terrestrial Time (TT).
 
 use crate::{
-    Date, Duration, Month, TimePoint,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TimePoint,
     time_scale::{AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -28,6 +28,22 @@ impl AbsoluteTimeScale for Tt {
 
 impl UniformDateTimeScale for Tt {}
 
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_tt(time_point: TtTime) -> Self
+    where
+        Self: FromTimeScale<Tt>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_tt(self) -> TtTime
+    where
+        Self: IntoTimeScale<Tt>,
+    {
+        self.into_time_scale()
+    }
+}
+
 impl TerrestrialTime for Tt {
     const TAI_OFFSET: Duration = Duration::milliseconds(32_184);
 }
@@ -36,7 +52,7 @@ impl TerrestrialTime for Tt {
 /// Astrodynamics".
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, Month, TaiTime};
+    use crate::{Month, TaiTime};
     let tai = TaiTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
     let tt = TtTime::from_fine_historic_datetime(
         2004,
@@ -48,7 +64,7 @@ fn known_timestamps() {
         crate::Duration::milliseconds(184),
     )
     .unwrap();
-    assert_eq!(tai, tt.into_time_scale());
+    assert_eq!(tai, tt.into_tai());
 }
 
 #[test]
@@ -97,8 +113,8 @@ mod proof_harness {
         kani::assume(second < 60);
         let time1 = TtTime::from_datetime(date, hour, minute, second);
         if let Ok(time1) = time1 {
-            let tai: TaiTime = time1.into_time_scale();
-            let time2: TtTime = tai.into_time_scale();
+            let tai: TaiTime = time1.into_tai();
+            let time2: TtTime = tai.into_tt();
             assert_eq!(time1, time2);
         }
     }

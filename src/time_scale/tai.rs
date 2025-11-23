@@ -3,7 +3,7 @@
 use num_traits::ConstZero;
 
 use crate::{
-    Date, Duration, Month, TimePoint,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TimePoint,
     time_scale::{AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -29,6 +29,22 @@ impl AbsoluteTimeScale for Tai {
 }
 
 impl UniformDateTimeScale for Tai {}
+
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_tai(time_point: TaiTime) -> Self
+    where
+        Self: FromTimeScale<Tai>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_tai(self) -> TaiTime
+    where
+        Self: IntoTimeScale<Tai>,
+    {
+        self.into_time_scale()
+    }
+}
 
 impl TerrestrialTime for Tai {
     const TAI_OFFSET: Duration = Duration::ZERO;

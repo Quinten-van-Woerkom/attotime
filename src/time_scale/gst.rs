@@ -1,7 +1,8 @@
 //! Representation of Galileo System Time (GST), which is broadcast by the Galileo constellation.
 
 use crate::{
-    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint,
+    UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
 };
 
@@ -28,6 +29,22 @@ impl AbsoluteTimeScale for Gst {
 
 impl UniformDateTimeScale for Gst {}
 
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_gst(time_point: GalileoTime) -> Self
+    where
+        Self: FromTimeScale<Gst>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_gst(self) -> GalileoTime
+    where
+        Self: IntoTimeScale<Gst>,
+    {
+        self.into_time_scale()
+    }
+}
+
 impl TerrestrialTime for Gst {
     const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
@@ -37,8 +54,8 @@ impl TerrestrialTime for Gst {
 /// aligned with GPS.
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, TaiTime};
+    use crate::TaiTime;
     let tai = TaiTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
     let gst = GalileoTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 13).unwrap();
-    assert_eq!(tai, gst.into_time_scale());
+    assert_eq!(tai, gst.into_tai());
 }

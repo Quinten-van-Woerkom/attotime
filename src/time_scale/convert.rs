@@ -9,7 +9,7 @@ use crate::TimePoint;
 /// Note that this trait must be implemented on a given `TimePoint`. The converse trait,
 /// `IntoScale`, may be derived automatically. Just like with `From` and `Into`, it is advised to
 /// simply implement `FromScale` and let `IntoScale` be derived.
-pub trait FromTimeScale<Scale> {
+pub trait FromTimeScale<Scale: ?Sized> {
     /// Constructs a time point from an instant expressed in another scale.
     fn from_time_scale(time_point: TimePoint<Scale>) -> Self;
 }
@@ -19,7 +19,7 @@ pub trait FromTimeScale<Scale> {
 /// it must always be possible to relate the time of two scales.
 ///
 /// This trait shall generally be derived based on an existing `FromScale` implementation.
-pub trait IntoTimeScale<Scale> {
+pub trait IntoTimeScale<Scale: ?Sized> {
     /// Constructs a time point from an instant expressed in another scale.
     fn into_time_scale(self) -> TimePoint<Scale>;
 }

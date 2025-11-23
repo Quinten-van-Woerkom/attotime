@@ -1,7 +1,8 @@
 //! Representation of BeiDou Time (BDT), which is broadcast by the BeiDou constellation.
 
 use crate::{
-    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint,
+    UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
 };
 
@@ -28,6 +29,22 @@ impl AbsoluteTimeScale for Bdt {
 
 impl UniformDateTimeScale for Bdt {}
 
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_bdt(time_point: BeiDouTime) -> Self
+    where
+        Self: FromTimeScale<Bdt>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_bdt(self) -> BeiDouTime
+    where
+        Self: IntoTimeScale<Bdt>,
+    {
+        self.into_time_scale()
+    }
+}
+
 impl TerrestrialTime for Bdt {
     const TAI_OFFSET: Duration = Duration::seconds(-33);
 }
@@ -36,8 +53,8 @@ impl TerrestrialTime for Bdt {
 /// epoch itself of the system.
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, UtcTime};
+    use crate::UtcTime;
     let utc = UtcTime::from_historic_datetime(2006, Month::January, 1, 0, 0, 0).unwrap();
     let bdt = BeiDouTime::from_historic_datetime(2006, Month::January, 1, 0, 0, 0).unwrap();
-    assert_eq!(utc, bdt.into_time_scale());
+    assert_eq!(utc, bdt.into_utc());
 }

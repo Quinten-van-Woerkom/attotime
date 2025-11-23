@@ -2,7 +2,8 @@
 //! Quasi-Zenith Satellite System constellation.
 
 use crate::{
-    Date, Duration, Month, TerrestrialTime, TimePoint, UniformDateTimeScale,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint,
+    UniformDateTimeScale,
     time_scale::{AbsoluteTimeScale, TimeScale},
 };
 
@@ -29,6 +30,22 @@ impl AbsoluteTimeScale for Qzsst {
 
 impl UniformDateTimeScale for Qzsst {}
 
+impl<Scale: ?Sized> TimePoint<Scale> {
+    pub fn from_qzsst(time_point: QzssTime) -> Self
+    where
+        Self: FromTimeScale<Qzsst>,
+    {
+        Self::from_time_scale(time_point)
+    }
+
+    pub fn into_qzsst(self) -> QzssTime
+    where
+        Self: IntoTimeScale<Qzsst>,
+    {
+        self.into_time_scale()
+    }
+}
+
 impl TerrestrialTime for Qzsst {
     const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
@@ -38,8 +55,8 @@ impl TerrestrialTime for Qzsst {
 /// with GPS.
 #[test]
 fn known_timestamps() {
-    use crate::{IntoTimeScale, TaiTime};
+    use crate::TaiTime;
     let tai = TaiTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 32).unwrap();
     let qzsst = QzssTime::from_historic_datetime(2004, Month::May, 14, 16, 43, 13).unwrap();
-    assert_eq!(tai, qzsst.into_time_scale());
+    assert_eq!(tai, qzsst.into_tai());
 }
