@@ -33,23 +33,23 @@ impl UniformDateTimeScale for Tcg {}
 
 impl TcgTime {
     fn into_tt(self) -> TtTime {
-        let epoch_offset = Duration::milliseconds(32_184);
+        const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
         let tcg_since_1977_01_01 = self.time_since_epoch();
-        let tcg_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01 - epoch_offset;
+        let tcg_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01 - EPOCH_OFFSET;
         let rate_difference = (tcg_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
             .div_round(5_000_000_000_000_000_000);
         let tt_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01_00_00_32_184 - rate_difference;
-        TtTime::from_time_since_epoch(epoch_offset) + tt_since_1977_01_01_00_00_32_184
+        TtTime::from_time_since_epoch(tt_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
     }
 
     fn from_tt(tt_time: TtTime) -> Self {
-        let epoch_offset = Duration::milliseconds(32_184);
+        const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
         let tt_since_1977_01_01 = tt_time.time_since_epoch();
-        let tt_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01 - epoch_offset;
+        let tt_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01 - EPOCH_OFFSET;
         let rate_difference = (tt_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
             .div_round(4_999_999_996_515_354_933);
         let tcg_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01_00_00_32_184 + rate_difference;
-        TcgTime::from_time_since_epoch(epoch_offset) + tcg_since_1977_01_01_00_00_32_184
+        TcgTime::from_time_since_epoch(tcg_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
     }
 }
 
