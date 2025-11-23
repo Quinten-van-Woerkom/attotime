@@ -2,7 +2,7 @@
 //! a clock at rest in a coordinate frame co-moving with the barycentre of the Solar system.
 
 use crate::{
-    Date, Month, TimePoint,
+    Date, Month, TdbTime, TimePoint,
     time_scale::{AbsoluteTimeScale, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -30,6 +30,16 @@ impl AbsoluteTimeScale for Tcb {
 }
 
 impl UniformDateTimeScale for Tcb {}
+
+impl TcbTime {
+    pub fn from_tdb(tdb_time: TdbTime) -> Self {
+        tdb_time.into_tcb()
+    }
+
+    pub fn into_tdb(self) -> TdbTime {
+        TdbTime::from_tcb(self)
+    }
+}
 
 #[cfg(kani)]
 mod proof_harness {
