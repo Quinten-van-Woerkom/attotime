@@ -1,0 +1,13 @@
+//! Implementation of parsing functionality. Largely separate from the actual time logic itself, so
+//! kept in a separate module for isolation.
+//!
+//! Primarily, a subset of ISO 8601 is supported.
+
+mod duration;
+mod gregorian_date;
+mod historic_date;
+mod julian_date;
+pub use duration::*;
+mod time_of_day;
+pub(crate) use time_of_day::*;
+mod time_point;

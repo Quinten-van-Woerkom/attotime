@@ -4,7 +4,7 @@
 
 use thiserror::Error;
 
-use crate::{Date, HistoricDate, Month};
+use crate::{Date, DurationDesignator, HistoricDate, Month};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 #[error("{day} {month} {year} does not exist in the historic calendar")]
@@ -114,4 +114,118 @@ pub enum InvalidGlonassDateTime {
         minute: u8,
         second: u8,
     },
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("error parsing `HistoricDate`")]
+pub enum HistoricDateParsingError {
+    #[error(transparent)]
+    IntegerParsingError(#[from] lexical_core::Error),
+    #[error(transparent)]
+    InvalidHistoricDate(#[from] InvalidHistoricDate),
+    #[error(transparent)]
+    InvalidMonthNumber(#[from] InvalidMonthNumber),
+    #[error("expected but did not find year-month delimiter '-'")]
+    ExpectedYearMonthDelimiter,
+    #[error("month representation must be exactly two digits")]
+    MonthRepresentationNotTwoDigits,
+    #[error("expected but did not find month-day delimiter '-'")]
+    ExpectedMonthDayDelimiter,
+    #[error("day representation must be exactly two digits")]
+    DayRepresentationNotTwoDigits,
+    #[error("could not parse entire string: data remains after historic date")]
+    UnexpectedRemainder,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("error parsing `GregorianDate`")]
+pub enum GregorianDateParsingError {
+    #[error(transparent)]
+    IntegerParsingError(#[from] lexical_core::Error),
+    #[error(transparent)]
+    InvalidGregorianDate(#[from] InvalidGregorianDate),
+    #[error(transparent)]
+    InvalidMonthNumber(#[from] InvalidMonthNumber),
+    #[error("expected but did not find year-month delimiter '-'")]
+    ExpectedYearMonthDelimiter,
+    #[error("month representation must be exactly two digits")]
+    MonthRepresentationNotTwoDigits,
+    #[error("expected but did not find month-day delimiter '-'")]
+    ExpectedMonthDayDelimiter,
+    #[error("day representation must be exactly two digits")]
+    DayRepresentationNotTwoDigits,
+    #[error("could not parse entire string: data remains after Gregorian date")]
+    UnexpectedRemainder,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("error parsing `JulianDate`")]
+pub enum JulianDateParsingError {
+    #[error(transparent)]
+    IntegerParsingError(#[from] lexical_core::Error),
+    #[error(transparent)]
+    InvalidJulianDate(#[from] InvalidJulianDate),
+    #[error(transparent)]
+    InvalidMonthNumber(#[from] InvalidMonthNumber),
+    #[error("expected but did not find year-month delimiter '-'")]
+    ExpectedYearMonthDelimiter,
+    #[error("month representation must be exactly two digits")]
+    MonthRepresentationNotTwoDigits,
+    #[error("expected but did not find month-day delimiter '-'")]
+    ExpectedMonthDayDelimiter,
+    #[error("day representation must be exactly two digits")]
+    DayRepresentationNotTwoDigits,
+    #[error("could not parse entire string: data remains after Julian date")]
+    UnexpectedRemainder,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("error parsing `TimeOfDay`")]
+pub enum TimeOfDayParsingError {
+    #[error(transparent)]
+    IntegerParsingError(#[from] lexical_core::Error),
+    #[error("hour representation must be exactly two digits")]
+    HourRepresentationNotTwoDigits,
+    #[error("expected but did not find hour-minute delimiter ':'")]
+    ExpectedHourMinuteDelimiter,
+    #[error("minute representation must be exactly two digits")]
+    MinuteRepresentationNotTwoDigits,
+    #[error("expected but did not find minute-second delimiter ':'")]
+    ExpectedMinuteSecondDelimiter,
+    #[error("integer part of the second representation must be exactly two digits")]
+    IntegerSecondRepresentationNotTwoDigits,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("error parsing `Duration`")]
+pub enum DurationParsingError {
+    #[error(transparent)]
+    IntegerParsingError(#[from] lexical_core::Error),
+    #[error("input string did not start with \'P\'")]
+    ExpectedDurationPrefix,
+    #[error("expected duration designator")]
+    ExpectedDurationDesignator,
+    #[error("could not parse entire string: data remains after duration")]
+    UnexpectedRemainder,
+    #[error("unit designators must be provided in decreasing error, but found {current}")]
+    NonDecreasingDesignators { current: DurationDesignator },
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("error parsing `TimePoint`")]
+pub enum TimePointParsingError<DateTimeError> {
+    #[error(transparent)]
+    DateParsingError(#[from] HistoricDateParsingError),
+    #[error(transparent)]
+    TimeOfDayParsingError(#[from] TimeOfDayParsingError),
+    #[error("expected but did not find time designator 'T'")]
+    ExpectedTimeDesignator,
+    #[error("expected but did not find space between time-of-day and time scale designator")]
+    ExpectedSpace,
+    #[error("expected but did not find time scale designator")]
+    ExpectedTimeScaleDesignator,
+    #[error("could not parse entire string: data remains after time point")]
+    UnexpectedRemainder,
+
+    DateTimeError(#[source] DateTimeError),
 }

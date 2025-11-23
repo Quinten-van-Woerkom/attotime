@@ -103,8 +103,12 @@ impl IntoDateTime for UtcTime {
 
         let seconds_since_scale_epoch =
             seconds_since_scale_epoch - Duration::seconds(leap_seconds.into());
-        let (days_since_scale_epoch, seconds_in_day) =
-            seconds_since_scale_epoch.factor_out::<SecondsPerDay>();
+        let (days_since_scale_epoch, seconds_in_day) = {
+            let factored = seconds_since_scale_epoch.floor::<SecondsPerDay>();
+            let remainder = seconds_since_scale_epoch - factored;
+            let factored = factored.count() / <SecondsPerDay as crate::UnitRatio>::ATTOSECONDS;
+            (factored, remainder)
+        };
         let days_since_scale_epoch: Days = Days::new(days_since_scale_epoch
             .try_into()
             .unwrap_or_else(|_| panic!("Call of `datetime_from_time_point` results in days since scale epoch outside of `i32` range")));

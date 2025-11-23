@@ -90,8 +90,12 @@ where
     fn into_datetime(self) -> (Date, u8, u8, u8) {
         // Step-by-step factoring of the time since epoch into days, hours, minutes, and seconds.
         let seconds_since_scale_epoch = self.time_since_epoch();
-        let (days_since_scale_epoch, seconds_in_day) =
-            seconds_since_scale_epoch.factor_out::<SecondsPerDay>();
+        let (days_since_scale_epoch, seconds_in_day) = {
+            let factored = seconds_since_scale_epoch.floor::<SecondsPerDay>();
+            let remainder = seconds_since_scale_epoch - factored;
+            let factored = factored.count() / <SecondsPerDay as crate::UnitRatio>::ATTOSECONDS;
+            (factored, remainder)
+        };
         let days_since_scale_epoch = Days::new(
             days_since_scale_epoch
                 .try_into()

@@ -31,20 +31,13 @@ impl AbsoluteTimeScale for Tcg {
 
 impl UniformDateTimeScale for Tcg {}
 
-const fn div_round(numerator: i128, denominator: i128) -> i128 {
-    (numerator + denominator / 2) / denominator
-}
-
 impl TcgTime {
     fn into_tt(self) -> TtTime {
         let epoch_offset = Duration::milliseconds(32_184);
         let tcg_since_1977_01_01 = self.time_since_epoch();
         let tcg_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01 - epoch_offset;
-        let rate_difference = div_round(
-            tcg_since_1977_01_01_00_00_32_184.count() * 3_484_645_067,
-            5_000_000_000_000_000_000,
-        );
-        let rate_difference = Duration::attoseconds(rate_difference);
+        let rate_difference = (tcg_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
+            .div_round(5_000_000_000_000_000_000);
         let tt_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01_00_00_32_184 - rate_difference;
         TtTime::from_time_since_epoch(epoch_offset) + tt_since_1977_01_01_00_00_32_184
     }
@@ -58,11 +51,8 @@ impl TcgTime {
             tt_since_1977_01_01_00_00_32_184,
             i128::MAX / 3_484_645_067
         );
-        let rate_difference = div_round(
-            tt_since_1977_01_01_00_00_32_184.count() * 3_484_645_067,
-            4_999_999_996_515_354_933,
-        );
-        let rate_difference = Duration::attoseconds(rate_difference);
+        let rate_difference = (tt_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
+            .div_round(4_999_999_996_515_354_933);
         let tcg_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01_00_00_32_184 + rate_difference;
         TcgTime::from_time_since_epoch(epoch_offset) + tcg_since_1977_01_01_00_00_32_184
     }

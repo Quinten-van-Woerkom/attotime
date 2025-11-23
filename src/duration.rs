@@ -10,7 +10,10 @@ use core::{
 use derive_more::*;
 use num_traits::{Bounded, ConstZero, Signed, Zero};
 
-use crate::{Days, FractionalDigitsIterator, UnitRatio};
+use crate::{
+    Days, Femto, FractionalDigitsIterator, Micro, Milli, Nano, Pico, Second, SecondsPerDay,
+    SecondsPerHour, SecondsPerMinute, SecondsPerMonth, SecondsPerWeek, SecondsPerYear, UnitRatio,
+};
 
 /// A `Duration` represents the difference between two time points. It has an associated
 /// `Representation`, which determines how the count of elapsed ticks is stored. The `Period`
@@ -38,70 +41,86 @@ impl Duration {
     /// Constructs a new `Duration` from a given number of femtoseconds.
     pub const fn femtoseconds(count: i128) -> Self {
         Self {
-            count: count * 1_000,
+            count: count * Femto::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of picoseconds.
     pub const fn picoseconds(count: i128) -> Self {
         Self {
-            count: count * 1_000_000,
+            count: count * Pico::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of nanoseconds.
     pub const fn nanoseconds(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000,
+            count: count * Nano::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of microseconds.
     pub const fn microseconds(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000,
+            count: count * Micro::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of milliseconds.
     pub const fn milliseconds(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000_000,
+            count: count * Milli::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of seconds.
     pub const fn seconds(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000_000_000,
+            count: count * Second::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of minutes.
     pub const fn minutes(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000_000_000 * 60,
+            count: count * SecondsPerMinute::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of hours.
     pub const fn hours(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000_000_000 * 60 * 60,
+            count: count * SecondsPerHour::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of days.
     pub const fn days(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000_000_000 * 60 * 60 * 24,
+            count: count * SecondsPerDay::ATTOSECONDS,
         }
     }
 
     /// Constructs a new `Duration` from a given number of weeks.
     pub const fn weeks(count: i128) -> Self {
         Self {
-            count: count * 1_000_000_000_000_000_000 * 60 * 60 * 24 * 7,
+            count: count * SecondsPerWeek::ATTOSECONDS,
+        }
+    }
+
+    /// Constructs a new `Duration` from a given number of months. Expresses a month as 1/12 of an
+    /// average Gregorian year.
+    pub const fn months(count: i128) -> Self {
+        Self {
+            count: count * SecondsPerMonth::ATTOSECONDS,
+        }
+    }
+
+    /// Constructs a new `Duration` from a given number of years. Uses an average Gregorian year as
+    /// duration.
+    pub const fn years(count: i128) -> Self {
+        Self {
+            count: count * SecondsPerYear::ATTOSECONDS,
         }
     }
 
@@ -135,16 +154,13 @@ impl Duration {
     }
 
     /// Converts towards a different time unit, rounding towards the nearest whole unit.
-    pub fn round<Target>(self) -> Duration
+    pub const fn round<Target>(self) -> Duration
     where
         Target: UnitRatio + ?Sized,
     {
-        // let unit_ratio = Atto::FRACTION.divide_by(&Target::FRACTION);
-        // Self {
-        //     count: (self.count.mul_round(unit_ratio) * unit_ratio.denominator())
-        //         / unit_ratio.numerator(),
-        // }
-        todo!("rounding not yet implemented")
+        let unit_attoseconds = Target::ATTOSECONDS;
+        let count = ((self.count + unit_attoseconds / 2) / unit_attoseconds) * unit_attoseconds;
+        Self { count }
     }
 
     /// Converts towards a different time unit, rounding towards positive infinity if the unit is
@@ -171,6 +187,18 @@ impl Duration {
         }
     }
 
+    /// Converts towards a different time unit, rounding towards zero if the unit is not entirely
+    /// commensurate with the present unit.
+    pub const fn truncate<Target>(self) -> Duration
+    where
+        Target: UnitRatio + ?Sized,
+    {
+        let unit_attoseconds = Target::ATTOSECONDS;
+        Self {
+            count: (self.count / unit_attoseconds) * unit_attoseconds,
+        }
+    }
+
     /// Segments this `Duration` by factoring out the largest possible number of whole multiples of
     /// a given unit. Returns this whole number as well as the remainder.
     ///
@@ -181,10 +209,54 @@ impl Duration {
     where
         Unit: UnitRatio + ?Sized,
     {
-        let factored = self.floor::<Unit>();
+        let factored = self.truncate::<Unit>();
         let remainder = self - factored;
         let factored = factored.count() / Unit::ATTOSECONDS;
         (factored, remainder)
+    }
+
+    /// Divides by an `i128`, rounding to the nearest result.
+    pub const fn div_round(self, other: i128) -> Self {
+        let count = (self.count + other / 2) / other;
+        Self { count }
+    }
+}
+
+impl core::fmt::Display for Duration {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.is_negative() {
+            write!(f, "-")?;
+        }
+
+        let (days, remainder) = self.factor_out::<SecondsPerDay>();
+        let (hours, remainder) = remainder.factor_out::<SecondsPerHour>();
+        let (minutes, remainder) = remainder.factor_out::<SecondsPerMinute>();
+        let (seconds, remainder) = remainder.factor_out::<Second>();
+        write!(f, "P")?;
+        if days != 0 {
+            write!(f, "{}D", days.abs())?;
+        }
+        write!(f, "T")?;
+        if hours != 0 {
+            write!(f, "{}H", hours.abs())?;
+        }
+        if minutes != 0 {
+            write!(f, "{}M", minutes.abs())?;
+        }
+        if seconds != 0 || !remainder.is_zero() {
+            write!(f, "{}", seconds.abs())?;
+            if !remainder.is_zero() {
+                write!(f, ".")?;
+                // Set maximum number of digits after the decimal point printed based on precision
+                // argument given to the formatter.
+                let max_digits_printed = f.precision();
+                for digit in remainder.decimal_digits(max_digits_printed) {
+                    write!(f, "{digit}")?;
+                }
+            }
+            write!(f, "S")?;
+        }
+        Ok(())
     }
 }
 

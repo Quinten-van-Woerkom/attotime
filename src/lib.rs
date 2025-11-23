@@ -8,6 +8,8 @@ pub use duration::*;
 pub mod errors;
 mod fractional_digits;
 pub use fractional_digits::*;
+mod parse;
+pub use parse::*;
 mod time_point;
 pub use time_point::*;
 mod time_scale;

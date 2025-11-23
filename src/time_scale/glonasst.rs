@@ -100,8 +100,12 @@ impl IntoLeapSecondDateTime for GlonassTime {
         let leap_seconds = Duration::seconds(leap_seconds.into());
 
         let seconds_since_scale_epoch = seconds_since_scale_epoch - leap_seconds;
-        let (days_since_scale_epoch, seconds_in_day) =
-            seconds_since_scale_epoch.factor_out::<SecondsPerDay>();
+        let (days_since_scale_epoch, seconds_in_day) = {
+            let factored = seconds_since_scale_epoch.floor::<SecondsPerDay>();
+            let remainder = seconds_since_scale_epoch - factored;
+            let factored = factored.count() / <SecondsPerDay as crate::UnitRatio>::ATTOSECONDS;
+            (factored, remainder)
+        };
         let days_since_scale_epoch = Days::new(
             days_since_scale_epoch
                 .try_into()
