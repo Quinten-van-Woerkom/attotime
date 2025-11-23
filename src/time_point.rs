@@ -430,23 +430,23 @@ fn truncated_format() {
     assert_eq!(format!("{time:.9}"), "1998-12-17T23:21:58.450103789 UTC");
 }
 
-// /// Verifies that formatting does not panic for a large randomized range of values.
-// #[cfg(feature = "std")]
-// #[test]
-// fn random_formatting() {
-//     use crate::TaiTime;
-//     use core::str::FromStr;
-//     use rand::prelude::*;
-//     let mut rng = rand_chacha::ChaCha12Rng::seed_from_u64(76);
-//     for _ in 0..10_000 {
-//         let ticks_since_epoch = rng.random::<i64>();
-//         let time_since_epoch = crate::Duration::nanoseconds(ticks_since_epoch.into());
-//         let time = TaiTime::from_time_since_epoch(time_since_epoch);
-//         let string = format!("{time:.9}");
-//         let time2 = TaiTime::from_str(string.as_str()).unwrap();
-//         assert_eq!(time, time2);
-//     }
-// }
+/// Verifies that formatting does not panic for a large randomized range of values.
+#[cfg(feature = "std")]
+#[test]
+fn random_formatting() {
+    use crate::TaiTime;
+    use core::str::FromStr;
+    use rand::prelude::*;
+    let mut rng = rand_chacha::ChaCha12Rng::seed_from_u64(76);
+    for _ in 0..10_000 {
+        let ticks_since_epoch = rng.random::<i64>();
+        let time_since_epoch = crate::Duration::nanoseconds(ticks_since_epoch.into());
+        let time = TaiTime::from_time_since_epoch(time_since_epoch);
+        let string = format!("{time:.9}");
+        let time2 = TaiTime::from_str(string.as_str()).unwrap();
+        assert_eq!(time, time2);
+    }
+}
 
 #[cfg(kani)]
 impl<Scale> kani::Arbitrary for TimePoint<Scale>
