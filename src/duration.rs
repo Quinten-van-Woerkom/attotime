@@ -3,7 +3,7 @@
 //! concept is similar to that applied in the C++ `chrono` library.
 
 use core::{
-    fmt::{Debug, Display},
+    fmt::Debug,
     ops::{Div, Mul},
 };
 
@@ -225,7 +225,7 @@ impl Duration {
     /// For maximum numerical precision, first reduces the magnitude of the fraction by computing
     /// the integer quotient: in this manner, only the computation of the fractional part loses
     /// numerical precision.
-    pub fn as_float<T: num_traits::Float + Display, Unit: UnitRatio>(self) -> T {
+    pub fn as_float<T: num_traits::Float, Unit: UnitRatio>(self) -> T {
         let numerator = self.count;
         let denominator = Unit::ATTOSECONDS;
         let quotient = T::from(numerator / denominator).unwrap();
