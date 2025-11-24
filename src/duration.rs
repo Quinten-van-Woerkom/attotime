@@ -3,7 +3,7 @@
 //! concept is similar to that applied in the C++ `chrono` library.
 
 use core::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     ops::{Div, Mul},
 };
 
@@ -220,6 +220,47 @@ impl Duration {
         let count = (self.count + other / 2) / other;
         Self { count }
     }
+
+    /// Converts into a float approximation of the stored duration, expressed in the desired units.
+    /// For maximum numerical precision, first reduces the magnitude of the fraction by computing
+    /// the integer quotient: in this manner, only the computation of the fractional part loses
+    /// numerical precision.
+    pub fn as_float<T: num_traits::Float + Display, Unit: UnitRatio>(self) -> T {
+        let numerator = self.count;
+        let denominator = Unit::ATTOSECONDS;
+        let quotient = T::from(numerator / denominator).unwrap();
+        let remainder = T::from(numerator % denominator).unwrap();
+        let fraction = remainder / T::from(denominator).unwrap();
+        quotient + fraction
+    }
+}
+
+/// Verifies that approximation of equivalent float values results in the correct values. For some
+/// of these values, we look for an exact match, since we know that the value may be represented
+/// exactly as a float.
+#[test]
+fn approximate_floats() {
+    let millisecond = Duration::milliseconds(1);
+    let seconds = millisecond.as_float::<f64, Second>();
+    assert_eq!(seconds, 0.001);
+
+    let attosecond = Duration::attoseconds(1);
+    let seconds = attosecond.as_float::<f64, Second>();
+    assert_eq!(seconds, 1e-18);
+
+    let day = Duration::days(1);
+    let seconds = day.as_float::<f32, Second>();
+    assert_eq!(seconds, 86400.);
+    let hours = day.as_float::<f32, SecondsPerHour>();
+    assert_eq!(hours, 24.);
+    let weeks = day.as_float::<f64, SecondsPerWeek>();
+    assert!((weeks - 1. / 7.).abs() < 0.1);
+
+    let year = Duration::years(1);
+    let days = year.as_float::<f64, SecondsPerDay>();
+    assert_eq!(days, 365.2425);
+    let months = year.as_float::<f64, SecondsPerMonth>();
+    assert_eq!(months, 12.);
 }
 
 impl core::fmt::Display for Duration {
