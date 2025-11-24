@@ -26,7 +26,7 @@ pub type Second = LiteralRatio<1_000_000_000_000_000_000>;
 pub type SecondsPerMinute = LiteralRatio<{ 1_000_000_000_000_000_000 * 60 }>;
 pub type SecondsPerHour = LiteralRatio<{ 1_000_000_000_000_000_000 * 3600 }>;
 pub type SecondsPerDay = LiteralRatio<{ 1_000_000_000_000_000_000 * 3600 * 24 }>;
-pub type SecondsPerWeek = LiteralRatio<{ 1_000_000_000_000_000_000 * 3600 * 24 * 27 }>;
+pub type SecondsPerWeek = LiteralRatio<{ 1_000_000_000_000_000_000 * 3600 * 24 * 7 }>;
 /// The number of seconds in 1/12 the average Gregorian year.
 pub type SecondsPerMonth = LiteralRatio<{ 1_000_000_000_000_000_000 * 2629746 }>;
 /// The number of seconds in an average Gregorian year.
