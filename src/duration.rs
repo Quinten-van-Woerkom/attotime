@@ -7,7 +7,6 @@ use core::{
     ops::{Div, Mul},
 };
 
-use derive_more::*;
 use num_traits::{Bounded, ConstZero, Signed, Zero};
 
 use crate::{
@@ -25,7 +24,19 @@ use crate::{
 /// purposes. Note that this type is explicitly intended for calculations only: when storing large
 /// numbers of durations, it might be more efficient to use a more tailor-made representation.
 #[derive(
-    Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Add, AddAssign, Sub, SubAssign, Neg,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    derive_more::Add,
+    derive_more::AddAssign,
+    derive_more::Sub,
+    derive_more::SubAssign,
+    derive_more::Neg,
 )]
 #[cfg_attr(kani, derive(kani::Arbitrary))]
 pub struct Duration {

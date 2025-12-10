@@ -6,7 +6,6 @@ use core::{
     ops::{Div, Mul},
 };
 
-use derive_more::*;
 use num_traits::{Bounded, ConstZero, Signed, Zero};
 
 use crate::Duration;
@@ -14,7 +13,19 @@ use crate::Duration;
 /// Representation of a duration to an accuracy of `Days`. Useful whenever some duration is known
 /// or needs to be known only to an accuracy of one day - for example, in calendrical computations.
 #[derive(
-    Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Add, AddAssign, Sub, SubAssign, Neg,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    derive_more::Add,
+    derive_more::AddAssign,
+    derive_more::Sub,
+    derive_more::SubAssign,
+    derive_more::Neg,
 )]
 #[cfg_attr(kani, derive(kani::Arbitrary))]
 pub struct Days {
