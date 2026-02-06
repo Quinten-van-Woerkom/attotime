@@ -10,8 +10,9 @@ use core::{
 use num_traits::{Bounded, Zero};
 
 use crate::{
-    Date, Days, Duration, FromDateTime, FromFineDateTime, GregorianDate, HistoricDate,
-    IntoDateTime, IntoFineDateTime, JulianDate, ModifiedJulianDate, Month, Second, UnitRatio,
+    Date, Days, Duration, FromDateTime, FromFineDateTime, FromTimeScale, GregorianDate,
+    HistoricDate, IntoDateTime, IntoFineDateTime, JulianDate, ModifiedJulianDate, Month, Second,
+    TerrestrialTime, UnitRatio, Utc,
     errors::{InvalidGregorianDateTime, InvalidHistoricDateTime, InvalidJulianDateTime},
     time_scale::{AbsoluteTimeScale, TimeScale, UniformDateTimeScale},
 };
@@ -146,6 +147,46 @@ impl<Scale: ?Sized> TimePoint<Scale> {
             Ok(time_point) => Ok(time_point),
             Err(error) => Err(InvalidJulianDateTime::InvalidDateTime(error)),
         }
+    }
+}
+
+impl<Scale> TimePoint<Scale>
+where
+    Scale: ?Sized + TerrestrialTime,
+    Self: FromDateTime + FromTimeScale<Utc>,
+{
+    /// Returns the current wall clock time, expressed in the time scale of `Self`. The resolution
+    /// and accuracy of the resulting time stamp may vary based on the host platform, and no
+    /// guarantees are made about its monotonicity.
+    ///
+    /// Particularly, the value of the resulting time stamp may be inaccurate near leap seconds.
+    ///
+    /// # Panics
+    /// Technically, this function may panic if the number of days since the Unix epoch does not
+    /// fit inside a `i32`. This will only occur about five million years from now.
+    ///
+    /// It may also panic if the obtained current time stamp is not a valid datetime.
+    #[cfg(feature = "std")]
+    #[must_use]
+    pub fn now() -> Self {
+        use crate::{SecondsPerDay, UtcTime};
+
+        let time_since_epoch = match std::time::UNIX_EPOCH.elapsed() {
+            Ok(duration) => {
+                Duration::seconds(duration.as_secs().into())
+                    + Duration::nanoseconds(duration.subsec_nanos().into())
+            }
+            Err(error) => {
+                let duration = error.duration();
+                -Duration::seconds(duration.as_secs().into())
+                    - Duration::nanoseconds(duration.subsec_nanos().into())
+            }
+        };
+        let (days, time_of_day) = time_since_epoch.factor_out::<SecondsPerDay>();
+        let days = Days::new(days.try_into().unwrap());
+        let date = Date::from_time_since_epoch(days);
+        let utc_time = UtcTime::from_datetime(date, 0, 0, 0).unwrap() + time_of_day;
+        Self::from_utc(utc_time)
     }
 }
 
