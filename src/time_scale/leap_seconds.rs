@@ -3,6 +3,8 @@
 
 use crate::{Date, Duration, FromDateTime, IntoDateTime, UtcTime};
 
+/// Provider of leap second information
+///
 /// Since leap seconds are hard to predict in advance (due to irregular variations in the Earth's
 /// rotation), their insertion and deletion is based on short-term predictions. This means that
 /// it is not possible to develop a leap second table that holds "for all eternity" without
@@ -30,12 +32,14 @@ pub trait LeapSecondProvider {
 pub trait FromLeapSecondDateTime: Sized {
     type Error: core::error::Error;
 
-    /// Maps a given combination of date and time-of-day to an instant on this time scale. May
-    /// return an error if the input does not represent a valid combination of date and
-    /// time-of-day.
+    /// Maps a given combination of date and time-of-day to an instant on this time scale.
     ///
     /// Takes a leap second provider as additional argument, which is used to determine at which
     /// times leap seconds are inserted or deleted.
+    ///
+    /// # Errors
+    /// Will return an error if the input does not represent a valid combination of date and
+    /// time-of-day.
     fn from_datetime(
         date: Date,
         hour: u8,
@@ -85,6 +89,8 @@ where
     }
 }
 
+/// Static leap second provider, baking in leap second information at build time
+///
 /// Default leap second provider that uses a pre-compiled table to obtain the leap seconds. Will
 /// suffice for most non-critical applications and is useful in testing, but cannot be updated
 /// after compilation. This makes it unsuitable for long-running applications.
@@ -171,60 +177,60 @@ impl LeapSecondProvider for StaticLeapSecondProvider {
     fn leap_seconds_at_time(&self, utc_time: UtcTime) -> (bool, i32) {
         let seconds_since_1972_01_01 = utc_time.time_since_epoch() / Duration::seconds(1);
         let (is_leap_second, leap_seconds) = match seconds_since_1972_01_01 {
-            1420156837.. => (false, 37),
-            1420156836 => (true, 36),
-            1372636836.. => (false, 36),
-            1372636835 => (true, 35),
-            1278028835.. => (false, 35),
-            1278028834 => (true, 34),
-            1167696034.. => (false, 34),
-            1167696033 => (true, 33),
-            1073001633.. => (false, 33),
-            1073001632 => (true, 32),
-            852076832.. => (false, 32),
-            852076831 => (true, 31),
-            804643231.. => (false, 31),
-            804643230 => (true, 30),
-            757382430.. => (false, 30),
-            757382429 => (true, 29),
-            709948829.. => (false, 29),
-            709948828 => (true, 28),
-            678412828.. => (false, 28),
-            678412827 => (true, 27),
-            646876827.. => (false, 27),
-            646876826 => (true, 26),
-            599616026.. => (false, 26),
-            599616025 => (true, 25),
-            568080025.. => (false, 25),
-            568080024 => (true, 24),
-            504921624.. => (false, 24),
-            504921623 => (true, 23),
-            425952023.. => (false, 23),
-            425952022 => (true, 22),
-            362793622.. => (false, 22),
-            362793621 => (true, 21),
-            331257621.. => (false, 21),
-            331257620 => (true, 20),
-            299721620.. => (false, 20),
-            299721619 => (true, 19),
-            252460819.. => (false, 19),
-            252460818 => (true, 18),
-            220924818.. => (false, 18),
-            220924817 => (true, 17),
-            189388817.. => (false, 17),
-            189388816 => (true, 16),
-            157852816.. => (false, 16),
-            157852815 => (true, 15),
-            126230415.. => (false, 15),
-            126230414 => (true, 14),
-            94694414.. => (false, 14),
-            94694413 => (true, 13),
-            63158413.. => (false, 13),
-            63158412 => (true, 12),
-            31622412.. => (false, 12),
-            31622411 => (true, 11),
-            15724811.. => (false, 11),
-            15724810 => (true, 10),
+            1_420_156_837.. => (false, 37),
+            1_420_156_836 => (true, 36),
+            1_372_636_836.. => (false, 36),
+            1_372_636_835 => (true, 35),
+            1_278_028_835.. => (false, 35),
+            1_278_028_834 => (true, 34),
+            1_167_696_034.. => (false, 34),
+            1_167_696_033 => (true, 33),
+            1_073_001_633.. => (false, 33),
+            1_073_001_632 => (true, 32),
+            852_076_832.. => (false, 32),
+            852_076_831 => (true, 31),
+            804_643_231.. => (false, 31),
+            804_643_230 => (true, 30),
+            757_382_430.. => (false, 30),
+            757_382_429 => (true, 29),
+            709_948_829.. => (false, 29),
+            709_948_828 => (true, 28),
+            678_412_828.. => (false, 28),
+            678_412_827 => (true, 27),
+            646_876_827.. => (false, 27),
+            646_876_826 => (true, 26),
+            599_616_026.. => (false, 26),
+            599_616_025 => (true, 25),
+            568_080_025.. => (false, 25),
+            568_080_024 => (true, 24),
+            504_921_624.. => (false, 24),
+            504_921_623 => (true, 23),
+            425_952_023.. => (false, 23),
+            425_952_022 => (true, 22),
+            362_793_622.. => (false, 22),
+            362_793_621 => (true, 21),
+            331_257_621.. => (false, 21),
+            331_257_620 => (true, 20),
+            299_721_620.. => (false, 20),
+            299_721_619 => (true, 19),
+            252_460_819.. => (false, 19),
+            252_460_818 => (true, 18),
+            220_924_818.. => (false, 18),
+            220_924_817 => (true, 17),
+            189_388_817.. => (false, 17),
+            189_388_816 => (true, 16),
+            157_852_816.. => (false, 16),
+            157_852_815 => (true, 15),
+            126_230_415.. => (false, 15),
+            126_230_414 => (true, 14),
+            94_694_414.. => (false, 14),
+            94_694_413 => (true, 13),
+            63_158_413.. => (false, 13),
+            63_158_412 => (true, 12),
+            31_622_412.. => (false, 12),
+            31_622_411 => (true, 11),
+            15_724_811.. => (false, 11),
+            15_724_810 => (true, 10),
             10.. => (false, 10),
             9 => (true, 9),
             _ => (false, 9),

@@ -7,6 +7,8 @@ use crate::{
 
 pub type TtTime = TimePoint<Tt>;
 
+/// Terrestrial time scale
+///
 /// Time scale representing the Terrestrial Time (TT) scale. This scale is a constant 32.184
 /// seconds ahead of TAI, but otherwise completely synchronized. It is used primarily as
 /// independent variable in the context of planetary ephemerides.
@@ -29,6 +31,7 @@ impl AbsoluteTimeScale for Tt {
 impl UniformDateTimeScale for Tt {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_tt(time_point: TtTime) -> Self
     where
         Self: FromTimeScale<Tt>,
@@ -36,6 +39,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_tt(self) -> TtTime
     where
         Self: IntoTimeScale<Tt>,
@@ -48,6 +52,7 @@ impl TerrestrialTime for Tt {
     const TAI_OFFSET: Duration = Duration::milliseconds(32_184);
 }
 
+#[allow(clippy::doc_markdown, reason = "False positive on McClain")]
 /// Compares with a known timestamp as obtained from Vallado and McClain's "Fundamentals of
 /// Astrodynamics".
 #[test]

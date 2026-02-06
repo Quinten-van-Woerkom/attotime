@@ -8,6 +8,8 @@ use crate::{
 
 pub type GalileoTime = TimePoint<Gst>;
 
+/// Galileo system time scale
+///
 /// Time scale representing the Galileo System Time (GST). GST has no leap seconds and increases
 /// monotonically at a constant rate. It is distributed as part of the Galileo broadcast messages,
 /// making it useful in a variety of high-accuracy situations.
@@ -30,6 +32,7 @@ impl AbsoluteTimeScale for Gst {
 impl UniformDateTimeScale for Gst {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_gst(time_point: GalileoTime) -> Self
     where
         Self: FromTimeScale<Gst>,
@@ -37,6 +40,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_gst(self) -> GalileoTime
     where
         Self: IntoTimeScale<Gst>,
@@ -49,6 +53,7 @@ impl TerrestrialTime for Gst {
     const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
 
+#[allow(clippy::doc_markdown, reason = "False positive on McClain")]
 /// Compares with a known timestamp as obtained from Vallado and McClain's "Fundamentals of
 /// Astrodynamics". Note that that timestamp is given for GPS time: Galileo system time is always
 /// aligned with GPS.

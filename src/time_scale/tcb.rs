@@ -8,6 +8,8 @@ use crate::{
 
 pub type TcbTime = TimePoint<Tcb>;
 
+/// Barycentric coordinate time scale
+///
 /// Time scale representing the Barycentric Coordinate Time (TCB). This scale is equivalent to the
 /// proper time as experienced by an (idealistic) clock outside of Sun's gravity well, but
 /// co-moving with the SSB. The resulting proper time is useful as independent variable for
@@ -32,6 +34,7 @@ impl AbsoluteTimeScale for Tcb {
 impl UniformDateTimeScale for Tcb {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_tcb(time_point: TcbTime) -> Self
     where
         Self: FromTimeScale<Tcb>,
@@ -39,6 +42,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_tcb(self) -> TcbTime
     where
         Self: IntoTimeScale<Tcb>,

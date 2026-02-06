@@ -10,6 +10,8 @@ use crate::{
     errors::{InvalidGregorianDate, InvalidHistoricDate, InvalidJulianDate},
 };
 
+/// Generic date representation
+///
 /// Generic representation of date. Identifies an exact individual date within the calendar, in
 /// terms of days before (negative) or after (positive) 1970-01-01. This makes it useful as
 /// universal type that can be converted to and from other calendrical types.
@@ -29,10 +31,12 @@ pub struct Date {
 
 impl Date {
     /// Creates a date from the given number of days since 1970-01-01.
+    #[must_use]
     pub const fn from_time_since_epoch(days: Days) -> Self {
         Self { days }
     }
 
+    #[must_use]
     /// The number of days since the epoch of this representation - midnight 1970.
     pub const fn time_since_epoch(&self) -> Days {
         self.days
@@ -42,6 +46,7 @@ impl Date {
     /// value represents strictly the number of elapsed calendar (!) days. While it is expressed as
     /// a duration, the possibility of leap seconds is ignored. Only interpret the returned value
     /// as an exact duration if no leap seconds occurred between both days.
+    #[must_use]
     pub fn elapsed_calendar_days_since(self, other: Self) -> Days {
         self.days - other.days
     }
@@ -49,6 +54,10 @@ impl Date {
 
 impl Date {
     /// Creates a `Date` based on a year-month-day date in the historic calendar.
+    ///
+    /// # Errors
+    /// Will raise an error if the provided combination of year, month, and day is not a valid day
+    /// in the historic calendar.
     pub const fn from_historic_date(
         year: i32,
         month: Month,
@@ -61,6 +70,10 @@ impl Date {
     }
 
     /// Creates a `Date` based on a year-month-day date in the proleptic Gregorian calendar.
+    ///
+    /// # Errors
+    /// Will raise an error if the provided combination of year, month, and day is not a valid day
+    /// in the proleptic Gregorian calendar.
     pub const fn from_gregorian_date(
         year: i32,
         month: Month,
@@ -73,6 +86,10 @@ impl Date {
     }
 
     /// Creates a `Date` based on a year-month-day date in the proleptic Julian calendar.
+    ///
+    /// # Errors
+    /// Will raise an error if the provided combination of year, month, and day is not a valid day
+    /// in the proleptic Julian calendar.
     pub const fn from_julian_date(
         year: i32,
         month: Month,
@@ -85,6 +102,7 @@ impl Date {
     }
 
     /// Returns the day-of-the-week of this date.
+    #[must_use]
     pub const fn week_day(&self) -> WeekDay {
         let z = self.time_since_epoch().count();
         let day = if z >= 0 { z % 7 } else { (z + 1) % 7 + 6 };

@@ -9,6 +9,8 @@ use crate::{
 
 pub type TaiTime = TimePoint<Tai>;
 
+/// International atomic time scale
+///
 /// Time scale representing the International Atomic Time standard (TAI). TAI has no leap seconds
 /// and increases monotonically at a constant rate. This makes it highly suitable for scientific
 /// and high-accuracy timekeeping.
@@ -31,6 +33,7 @@ impl AbsoluteTimeScale for Tai {
 impl UniformDateTimeScale for Tai {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_tai(time_point: TaiTime) -> Self
     where
         Self: FromTimeScale<Tai>,
@@ -38,6 +41,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_tai(self) -> TaiTime
     where
         Self: IntoTimeScale<Tai>,
@@ -78,14 +82,38 @@ fn known_timestamps() {
 
     check_gregorian_datetime(1958, January, 1, 0, 0, 0, Duration::seconds(0));
     check_gregorian_datetime(1958, January, 2, 0, 0, 0, Duration::seconds(86400));
-    check_gregorian_datetime(1960, January, 1, 0, 0, 0, Duration::seconds(63072000));
-    check_gregorian_datetime(1961, January, 1, 0, 0, 0, Duration::seconds(94694400));
-    check_gregorian_datetime(1970, January, 1, 0, 0, 0, Duration::seconds(378691200));
-    check_gregorian_datetime(1976, January, 1, 0, 0, 0, Duration::seconds(567993600));
-    check_gregorian_datetime(2025, July, 16, 16, 23, 24, Duration::seconds(2131374204));
-    check_gregorian_datetime(2034, December, 26, 8, 2, 37, Duration::seconds(2429424157));
-    check_gregorian_datetime(2760, April, 1, 21, 59, 58, Duration::seconds(25316575198));
-    check_gregorian_datetime(1643, January, 4, 1, 1, 33, Duration::seconds(-9940143507));
+    check_gregorian_datetime(1960, January, 1, 0, 0, 0, Duration::seconds(63_072_000));
+    check_gregorian_datetime(1961, January, 1, 0, 0, 0, Duration::seconds(94_694_400));
+    check_gregorian_datetime(1970, January, 1, 0, 0, 0, Duration::seconds(378_691_200));
+    check_gregorian_datetime(1976, January, 1, 0, 0, 0, Duration::seconds(567_993_600));
+    check_gregorian_datetime(2025, July, 16, 16, 23, 24, Duration::seconds(2_131_374_204));
+    check_gregorian_datetime(
+        2034,
+        December,
+        26,
+        8,
+        2,
+        37,
+        Duration::seconds(2_429_424_157),
+    );
+    check_gregorian_datetime(
+        2760,
+        April,
+        1,
+        21,
+        59,
+        58,
+        Duration::seconds(25_316_575_198),
+    );
+    check_gregorian_datetime(
+        1643,
+        January,
+        4,
+        1,
+        1,
+        33,
+        Duration::seconds(-9_940_143_507),
+    );
 }
 
 #[cfg(test)]

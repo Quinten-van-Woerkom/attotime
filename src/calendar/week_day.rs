@@ -19,6 +19,10 @@ pub enum WeekDay {
 }
 
 impl WeekDay {
+    /// Attempts to convert a `u8` weekday number into the equivalent enum entry.
+    ///
+    /// # Errors
+    /// Will raise an error if the provided weekday number is larger than 6.
     pub const fn try_from(week_day: u8) -> Result<Self, InvalidWeekDayNumber> {
         let week_day = match week_day {
             0 => Self::Sunday,

@@ -17,7 +17,8 @@ pub struct FractionalDigitsIterator {
 }
 
 impl FractionalDigitsIterator {
-    pub fn from_signed(
+    #[must_use]
+    pub const fn from_signed(
         count: i128,
         numerator: i128,
         denominator: i128,
@@ -48,7 +49,7 @@ impl Iterator for FractionalDigitsIterator {
 
         if keep_going && self.current_digits < ABSOLUTE_MAX_DIGITS {
             self.current_digits += 1;
-            self.remainder *= self.base as i128;
+            self.remainder *= i128::from(self.base);
             let digit: u8 = (self.remainder / self.denominator)
                 .try_into()
                 .unwrap_or_else(|_| panic!());

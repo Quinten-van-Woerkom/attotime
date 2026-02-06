@@ -12,6 +12,8 @@ use crate::{
 
 pub type UtcTime = TimePoint<Utc>;
 
+/// Coordinated universal time scale
+///
 /// Time scale representing Coordinated Universal Time (UTC). This scale is adjusted using leap
 /// seconds to closely match the rotation of the Earth. This makes it useful as civil time scale,
 /// but also means that external, discontinuous synchronization is required.
@@ -48,6 +50,7 @@ impl AbsoluteTimeScale for Utc {
 }
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_utc(time_point: UtcTime) -> Self
     where
         Self: FromTimeScale<Utc>,
@@ -55,6 +58,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_utc(self) -> UtcTime
     where
         Self: IntoTimeScale<Utc>,
@@ -106,7 +110,7 @@ impl FromDateTime for UtcTime {
             + seconds
             + Duration::seconds(leap_seconds.into())
             + days_since_scale_epoch.into();
-        Ok(TimePoint::from_time_since_epoch(time_since_epoch))
+        Ok(Self::from_time_since_epoch(time_since_epoch))
     }
 }
 
@@ -230,10 +234,10 @@ fn tai_roundtrip_near_leap_seconds() {
         UtcTime::from_datetime(date5, 23, 59, 59).unwrap(),
     ];
 
-    for &time in times.iter() {
+    for &time in &times {
         let tai = TaiTime::from_time_scale(time);
-        let time2 = tai.into_utc();
-        assert_eq!(time, time2);
+        let utc_time = tai.into_utc();
+        assert_eq!(time, utc_time);
     }
 }
 
@@ -253,8 +257,8 @@ fn datetime_roundtrip_near_leap_seconds() {
 
     let times_of_day = [(23, 59, 58), (23, 59, 59), (0, 0, 0), (0, 0, 1)];
 
-    for date in dates.iter() {
-        for time_of_day in times_of_day.iter() {
+    for date in &dates {
+        for time_of_day in &times_of_day {
             let hour = time_of_day.0;
             let minute = time_of_day.1;
             let second = time_of_day.2;

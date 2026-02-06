@@ -13,6 +13,8 @@ use crate::{
 /// scale.
 pub type GlonassTime = TimePoint<Glonasst>;
 
+/// GLONASS time scale
+///
 /// The GLONASS Time (GLONASST) time scale is broadcast by GLONASS satellites. It follows UTC (or
 /// rather, UTC(SU), which is a realization of UTC) and adds three hours (Moscow time). Indeed,
 /// this means that it also incorporates leap seconds.
@@ -33,6 +35,7 @@ impl AbsoluteTimeScale for Glonasst {
 }
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_glonasst(time_point: GlonassTime) -> Self
     where
         Self: FromTimeScale<Glonasst>,
@@ -40,6 +43,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_glonasst(self) -> GlonassTime
     where
         Self: IntoTimeScale<Glonasst>,
@@ -102,7 +106,7 @@ impl FromLeapSecondDateTime for GlonassTime {
             + seconds
             + Duration::seconds(total_leap_seconds.into())
             + days_since_scale_epoch.into();
-        Ok(TimePoint::from_time_since_epoch(time_since_epoch))
+        Ok(Self::from_time_since_epoch(time_since_epoch))
     }
 }
 

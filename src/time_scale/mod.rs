@@ -48,6 +48,8 @@ pub trait TimeScale {
     const ABBREVIATION: &'static str;
 }
 
+/// Absolute time scale
+///
 /// `TimeScale` that is fixed in calendrical time by an absolute epoch. Note that this does not yet
 /// unambiguously define the scale: for that, it must be linked to a well-defined scale like TAI or
 /// UTC (for example, by implementing the `TerrestrialTime` trait).

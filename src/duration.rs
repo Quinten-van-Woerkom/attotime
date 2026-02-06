@@ -14,6 +14,8 @@ use crate::{
     SecondsPerHour, SecondsPerMinute, SecondsPerMonth, SecondsPerWeek, SecondsPerYear, UnitRatio,
 };
 
+/// Representation of time durations
+///
 /// A `Duration` represents the difference between two time points. It has an associated
 /// `Representation`, which determines how the count of elapsed ticks is stored. The `Period`
 /// determines the integer (!) ratio of each tick to seconds. This may be used to convert between
@@ -45,11 +47,13 @@ pub struct Duration {
 
 impl Duration {
     /// Constructs a new `Duration` from a given number of attoseconds.
+    #[must_use]
     pub const fn attoseconds(count: i128) -> Self {
         Self { count }
     }
 
     /// Constructs a new `Duration` from a given number of femtoseconds.
+    #[must_use]
     pub const fn femtoseconds(count: i128) -> Self {
         Self {
             count: count * Femto::ATTOSECONDS,
@@ -57,6 +61,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of picoseconds.
+    #[must_use]
     pub const fn picoseconds(count: i128) -> Self {
         Self {
             count: count * Pico::ATTOSECONDS,
@@ -64,6 +69,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of nanoseconds.
+    #[must_use]
     pub const fn nanoseconds(count: i128) -> Self {
         Self {
             count: count * Nano::ATTOSECONDS,
@@ -71,6 +77,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of microseconds.
+    #[must_use]
     pub const fn microseconds(count: i128) -> Self {
         Self {
             count: count * Micro::ATTOSECONDS,
@@ -78,6 +85,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of milliseconds.
+    #[must_use]
     pub const fn milliseconds(count: i128) -> Self {
         Self {
             count: count * Milli::ATTOSECONDS,
@@ -85,6 +93,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of seconds.
+    #[must_use]
     pub const fn seconds(count: i128) -> Self {
         Self {
             count: count * Second::ATTOSECONDS,
@@ -92,6 +101,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of minutes.
+    #[must_use]
     pub const fn minutes(count: i128) -> Self {
         Self {
             count: count * SecondsPerMinute::ATTOSECONDS,
@@ -99,6 +109,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of hours.
+    #[must_use]
     pub const fn hours(count: i128) -> Self {
         Self {
             count: count * SecondsPerHour::ATTOSECONDS,
@@ -106,6 +117,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of days.
+    #[must_use]
     pub const fn days(count: i128) -> Self {
         Self {
             count: count * SecondsPerDay::ATTOSECONDS,
@@ -113,6 +125,7 @@ impl Duration {
     }
 
     /// Constructs a new `Duration` from a given number of weeks.
+    #[must_use]
     pub const fn weeks(count: i128) -> Self {
         Self {
             count: count * SecondsPerWeek::ATTOSECONDS,
@@ -121,6 +134,7 @@ impl Duration {
 
     /// Constructs a new `Duration` from a given number of months. Expresses a month as 1/12 of an
     /// average Gregorian year.
+    #[must_use]
     pub const fn months(count: i128) -> Self {
         Self {
             count: count * SecondsPerMonth::ATTOSECONDS,
@@ -129,6 +143,7 @@ impl Duration {
 
     /// Constructs a new `Duration` from a given number of years. Uses an average Gregorian year as
     /// duration.
+    #[must_use]
     pub const fn years(count: i128) -> Self {
         Self {
             count: count * SecondsPerYear::ATTOSECONDS,
@@ -138,6 +153,7 @@ impl Duration {
     /// Returns the raw number of time units contained in this `Duration`. It is advised not to
     /// use this function unless absolutely necessary, as it effectively throws away all time unit
     /// information and safety.
+    #[must_use]
     pub const fn count(&self) -> i128 {
         self.count
     }
@@ -165,7 +181,8 @@ impl Duration {
     }
 
     /// Converts towards a different time unit, rounding towards the nearest whole unit.
-    pub const fn round<Target>(self) -> Duration
+    #[must_use]
+    pub const fn round<Target>(self) -> Self
     where
         Target: UnitRatio + ?Sized,
     {
@@ -176,7 +193,8 @@ impl Duration {
 
     /// Converts towards a different time unit, rounding towards positive infinity if the unit is
     /// not entirely commensurate with the present unit.
-    pub fn ceil<Target>(self) -> Duration
+    #[must_use]
+    pub fn ceil<Target>(self) -> Self
     where
         Target: UnitRatio + ?Sized,
     {
@@ -188,7 +206,8 @@ impl Duration {
 
     /// Converts towards a different time unit, rounding towards negative infinity if the unit is
     /// not entirely commensurate with the present unit.
-    pub fn floor<Target>(self) -> Duration
+    #[must_use]
+    pub fn floor<Target>(self) -> Self
     where
         Target: UnitRatio + ?Sized,
     {
@@ -200,7 +219,8 @@ impl Duration {
 
     /// Converts towards a different time unit, rounding towards zero if the unit is not entirely
     /// commensurate with the present unit.
-    pub const fn truncate<Target>(self) -> Duration
+    #[must_use]
+    pub const fn truncate<Target>(self) -> Self
     where
         Target: UnitRatio + ?Sized,
     {
@@ -216,7 +236,8 @@ impl Duration {
     /// An example would be factoring out the number of whole days from some elapsed time: then,
     /// `self.factor_out()` would return a tuple of the number of whole days and the fractional
     /// day part that remains.
-    pub fn factor_out<Unit>(self) -> (i128, Duration)
+    #[must_use]
+    pub fn factor_out<Unit>(self) -> (i128, Self)
     where
         Unit: UnitRatio + ?Sized,
     {
@@ -227,6 +248,7 @@ impl Duration {
     }
 
     /// Divides by an `i128`, rounding to the nearest result.
+    #[must_use]
     pub const fn div_round(self, other: i128) -> Self {
         let count = (self.count + other / 2) / other;
         Self { count }
@@ -236,6 +258,11 @@ impl Duration {
     /// For maximum numerical precision, first reduces the magnitude of the fraction by computing
     /// the integer quotient: in this manner, only the computation of the fractional part loses
     /// numerical precision.
+    ///
+    /// # Panics
+    /// May panic if the quotient or remainder of the division by the unit ratio cannot be
+    /// represented by the provided type `T`.
+    #[must_use]
     pub fn as_float<T: num_traits::Float, Unit: UnitRatio>(self) -> T {
         let numerator = self.count;
         let denominator = Unit::ATTOSECONDS;
@@ -250,6 +277,7 @@ impl Duration {
 /// of these values, we look for an exact match, since we know that the value may be represented
 /// exactly as a float.
 #[test]
+#[allow(clippy::float_cmp, reason = "Exact values expected")]
 fn approximate_floats() {
     let millisecond = Duration::milliseconds(1);
     let seconds = millisecond.as_float::<f64, Second>();
@@ -322,7 +350,7 @@ impl<T> Mul<T> for Duration
 where
     T: Into<i128>,
 {
-    type Output = Duration;
+    type Output = Self;
 
     /// A `Duration` may not be multiplied with another `Duration` (as that is undefined), but it may
     /// be multiplied with unitless numbers.
@@ -333,10 +361,10 @@ where
     }
 }
 
-impl Div<Duration> for Duration {
+impl Div for Duration {
     type Output = i128;
 
-    fn div(self, rhs: Duration) -> Self::Output {
+    fn div(self, rhs: Self) -> Self::Output {
         self.count / rhs.count
     }
 }
@@ -345,7 +373,7 @@ impl<T> Div<T> for Duration
 where
     T: Into<i128>,
 {
-    type Output = Duration;
+    type Output = Self;
 
     /// A `Duration` may may be divided by unitless numbers to obtain a new `Duration`.
     fn div(self, rhs: T) -> Self::Output {
@@ -386,29 +414,34 @@ impl ConstZero for Duration {
 }
 
 impl Duration {
-    pub fn abs(&self) -> Self {
+    #[must_use]
+    pub const fn abs(&self) -> Self {
         Self {
             count: self.count.abs(),
         }
     }
 
+    #[must_use]
     pub fn abs_sub(&self, other: &Self) -> Self {
         Self {
             count: self.count.abs_sub(&other.count),
         }
     }
 
-    pub fn signum(&self) -> Self {
+    #[must_use]
+    pub const fn signum(&self) -> Self {
         Self {
             count: self.count.signum(),
         }
     }
 
-    pub fn is_positive(&self) -> bool {
+    #[must_use]
+    pub const fn is_positive(&self) -> bool {
         self.count.is_positive()
     }
 
-    pub fn is_negative(&self) -> bool {
+    #[must_use]
+    pub const fn is_negative(&self) -> bool {
         self.count.is_negative()
     }
 }

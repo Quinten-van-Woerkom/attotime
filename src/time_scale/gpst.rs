@@ -8,6 +8,8 @@ use crate::{
 
 pub type GpsTime = TimePoint<Gpst>;
 
+/// GPS time scale
+///
 /// Time scale representing the Global Positioning System Time (GPST). GPST has no leap seconds
 /// and increases monotonically at a constant rate. It is distributed as part of the GPS broadcast
 /// messages, making it useful in a variety of high-accuracy situations.
@@ -30,6 +32,7 @@ impl AbsoluteTimeScale for Gpst {
 impl UniformDateTimeScale for Gpst {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_gpst(time_point: GpsTime) -> Self
     where
         Self: FromTimeScale<Gpst>,
@@ -37,6 +40,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_gpst(self) -> GpsTime
     where
         Self: IntoTimeScale<Gpst>,
@@ -49,6 +53,7 @@ impl TerrestrialTime for Gpst {
     const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
 
+#[allow(clippy::doc_markdown, reason = "False positive on McClain")]
 /// Compares with a known timestamp as obtained from Vallado and McClain's "Fundamentals of
 /// Astrodynamics".
 #[test]

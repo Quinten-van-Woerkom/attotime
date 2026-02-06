@@ -19,7 +19,7 @@ impl FromStr for Duration {
     /// corresponds with the exact average duration of a Gregorian year.
     fn from_str(mut string: &str) -> Result<Self, Self::Err> {
         // Parse the mandatory duration prefix 'P'.
-        if string.starts_with("P") {
+        if string.starts_with('P') {
             string = string.get(1..).unwrap();
         } else {
             return Err(DurationParsingError::ExpectedDurationPrefix);
@@ -31,14 +31,14 @@ impl FromStr for Duration {
 /// Parses the remainder of an ISO 8601 duration string after a 'P'.
 #[inline]
 fn parse_years_duration(mut string: &str) -> Result<Duration, DurationParsingError> {
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
         return parse_hours_duration(string, Duration::ZERO);
     }
 
     let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
-    if string.starts_with(".") {
+    if string.starts_with('.') {
         parse_years_fractional_duration(string, count)
     } else {
         parse_years_duration_designator(string, count)
@@ -118,14 +118,14 @@ fn parse_months_duration(
         return Ok(duration);
     }
 
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
         return parse_hours_duration(string, duration);
     }
 
     let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
-    if string.starts_with(".") {
+    if string.starts_with('.') {
         parse_months_fractional_duration(string, duration, count)
     } else {
         parse_months_duration_designator(string, duration, count)
@@ -190,7 +190,7 @@ fn parse_months_duration_designator(
         .ok_or(DurationParsingError::ExpectedDurationDesignator)?;
     string = string.get(1..).unwrap();
 
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
     }
 
@@ -222,14 +222,14 @@ fn parse_days_duration(
         return Ok(duration);
     }
 
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
         return parse_hours_duration(string, duration);
     }
 
     let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
-    if string.starts_with(".") {
+    if string.starts_with('.') {
         parse_days_fractional_duration(string, duration, count)
     } else {
         parse_days_duration_designator(string, duration, count)
@@ -294,7 +294,7 @@ fn parse_days_duration_designator(
         .ok_or(DurationParsingError::ExpectedDurationDesignator)?;
     string = string.get(1..).unwrap();
 
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
     }
 
@@ -328,7 +328,7 @@ fn parse_hours_duration(
 
     let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
-    if string.starts_with(".") {
+    if string.starts_with('.') {
         parse_hours_fractional_duration(string, duration, count)
     } else {
         parse_hours_duration_designator(string, duration, count)
@@ -425,7 +425,7 @@ fn parse_minutes_duration(
 
     let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
-    if string.starts_with(".") {
+    if string.starts_with('.') {
         parse_minutes_fractional_duration(string, duration, count)
     } else {
         parse_minutes_duration_designator(string, duration, count)
@@ -490,7 +490,7 @@ fn parse_minutes_duration_designator(
         .ok_or(DurationParsingError::ExpectedDurationDesignator)?;
     string = string.get(1..).unwrap();
 
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
     }
 
@@ -528,7 +528,7 @@ fn parse_seconds_duration(
 
     let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
-    if string.starts_with(".") {
+    if string.starts_with('.') {
         parse_seconds_fractional_duration(string, duration, count)
     } else {
         parse_seconds_duration_designator(string, duration, count)
@@ -593,7 +593,7 @@ fn parse_seconds_duration_designator(
         .ok_or(DurationParsingError::ExpectedDurationDesignator)?;
     string = string.get(1..).unwrap();
 
-    if string.starts_with("T") {
+    if string.starts_with('T') {
         string = string.get(1..).unwrap();
     }
 
@@ -732,7 +732,7 @@ fn simple_composite_durations() {
     let duration = Duration::from_str("P1Y2D3H4M5S").unwrap();
     assert_eq!(
         duration,
-        Duration::seconds(31556952 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
+        Duration::seconds(31_556_952 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
     );
 }
 
@@ -757,19 +757,19 @@ fn composite_durations() {
     let duration = Duration::from_str("P1Y2D3H4M5S").unwrap();
     assert_eq!(
         duration,
-        Duration::seconds(31556952 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
+        Duration::seconds(31_556_952 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
     );
 
     let duration = Duration::from_str("P1Y11M2D3H4M5S").unwrap();
     assert_eq!(
         duration,
-        Duration::seconds(31556952 + 11 * 2629746 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
+        Duration::seconds(31_556_952 + 11 * 2_629_746 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
     );
 
     let duration = Duration::from_str("P1Y11M2DT3H4M5S").unwrap();
     assert_eq!(
         duration,
-        Duration::seconds(31556952 + 11 * 2629746 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
+        Duration::seconds(31_556_952 + 11 * 2_629_746 + 2 * 86400 + 3 * 3600 + 4 * 60 + 5)
     );
 }
 

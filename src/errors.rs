@@ -1,3 +1,5 @@
+//! Error types
+//!
 //! All errors that may be returned by public functions of this library are defined in this module.
 //! This is useful in reducing the number of "unnecessary" inter-module dependencies, by ensuring
 //! that using the results/error of a function does not require importing its entire module.
@@ -68,7 +70,7 @@ pub struct InvalidTimeOfDay {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 #[error("invalid historic date-time")]
-pub enum InvalidHistoricDateTime<InvalidDateTime: core::error::Error> {
+pub enum InvalidHistoricDateTime<InvalidDateTime> {
     #[error(transparent)]
     InvalidHistoricDate(#[from] InvalidHistoricDate),
     InvalidDateTime(#[source] InvalidDateTime),
@@ -76,7 +78,7 @@ pub enum InvalidHistoricDateTime<InvalidDateTime: core::error::Error> {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 #[error("invalid Gregorian date-time")]
-pub enum InvalidGregorianDateTime<InvalidDateTime: core::error::Error> {
+pub enum InvalidGregorianDateTime<InvalidDateTime> {
     #[error(transparent)]
     InvalidGregorianDate(#[from] InvalidGregorianDate),
     InvalidDateTime(#[source] InvalidDateTime),
@@ -84,7 +86,7 @@ pub enum InvalidGregorianDateTime<InvalidDateTime: core::error::Error> {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 #[error("invalid Julian date-time")]
-pub enum InvalidJulianDateTime<InvalidDateTime: core::error::Error> {
+pub enum InvalidJulianDateTime<InvalidDateTime> {
     #[error(transparent)]
     InvalidJulianDate(#[from] InvalidJulianDate),
     InvalidDateTime(#[source] InvalidDateTime),

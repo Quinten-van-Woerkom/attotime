@@ -3,6 +3,8 @@
 
 use crate::{Duration, FromTimeScale, TimePoint, time_scale::AbsoluteTimeScale};
 
+/// Terrestrial time scales
+///
 /// In general, "terrestrial time" refers not just to the specific realization TT, but to an
 /// idealized clock on the Earth geoid. It turns out that a lot of time scales are simply a variant
 /// on terrestrial time (or, equivalently, TAI). All these time scales may easily be converted into

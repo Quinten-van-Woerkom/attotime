@@ -8,6 +8,8 @@ use crate::{
     errors::{InvalidDayOfYear, InvalidDayOfYearCount, InvalidHistoricDate},
 };
 
+/// Date in the historic calendar
+///
 /// Implementation of a date in the historic calendar. After 15 October 1582, this coincides with
 /// the Gregorian calendar; until 4 October 1582, this is the Julian calendar. The days inbetween
 /// do not exist.
@@ -28,6 +30,9 @@ impl HistoricDate {
     /// requested date does not exist.
     ///
     /// This function will never panic.
+    ///
+    /// # Errors
+    /// Will raise an error if the given date does not exist within the historic calendar.
     pub const fn new(year: i32, month: Month, day: u8) -> Result<Self, InvalidHistoricDate> {
         if Self::is_valid_date(year, month, day) {
             Ok(Self { year, month, day })
@@ -40,6 +45,9 @@ impl HistoricDate {
     /// algorithm found by A. Pouplier and reported by Jean Meeus in Astronomical Algorithms.
     ///
     /// This function will never panic.
+    ///
+    /// # Errors
+    /// Will error if the given `day_of_year` does not exist for the passed `year`.
     pub const fn from_ordinal_date(year: i32, day_of_year: u16) -> Result<Self, InvalidDayOfYear> {
         let is_leap_year = Self::is_leap_year(year);
         let (month, day) = match month_day_from_ordinal_date(year, day_of_year, is_leap_year) {
@@ -56,6 +64,7 @@ impl HistoricDate {
         }
     }
 
+    #[must_use]
     pub const fn from_date(date: Date) -> Self {
         // Determine which calendar applies: Julian or Gregorian
         const GREGORIAN_REFORM: Date = match GregorianDate::new(1582, Month::October, 15) {
@@ -86,8 +95,9 @@ impl HistoricDate {
     /// on the approach described by Meeus in Astronomical Algorithms (Chapter 7, Julian Day). This
     /// variation adapts the algorithm to the Unix epoch and removes the dependency on floating
     /// point arithmetic.
+    #[must_use]
     pub const fn into_date(self) -> Date {
-        let HistoricDate { year, month, day } = self;
+        let Self { year, month, day } = self;
         if self.is_gregorian() {
             match GregorianDate::new(year, month, day) {
                 Ok(date) => date.into_date(),
@@ -105,16 +115,19 @@ impl HistoricDate {
     /// also done in NAIF SPICE): the year 1 BCE is represented as 0, 2 BCE as -1, etc. Hence,
     /// around the year 0, the numbering is ..., -2 (3 BCE), -1 (2 BCE), 0 (1 BCE), 1 (1 CE), 2 (2
     /// CE), et cetera. In this manner, the year numbering proceeds smoothly through 0.
+    #[must_use]
     pub const fn year(&self) -> i32 {
         self.year
     }
 
     /// Returns the month stored inside this historic date.
+    #[must_use]
     pub const fn month(&self) -> Month {
         self.month
     }
 
     /// Returns the day-of-month stored inside this historic date.
+    #[must_use]
     pub const fn day(&self) -> u8 {
         self.day
     }
@@ -122,6 +135,7 @@ impl HistoricDate {
     /// Returns the day-of-year of this specific date, within its calendar year. The day-of-year is
     /// an integer value ranging from 1 on January 1 to 365 (or 365, in leap years) on December 31.
     /// Uses the algorithm given by Meeus in Astronomical Algorithms.
+    #[must_use]
     pub const fn day_of_year(&self) -> u16 {
         let k = if Self::is_leap_year(self.year) { 1 } else { 2 };
         let m = self.month() as u16;
@@ -131,6 +145,7 @@ impl HistoricDate {
 
     /// Returns whether the current date falls within the Gregorian (true) or Julian (false) part
     /// of the historic calendar.
+    #[must_use]
     pub const fn is_gregorian(&self) -> bool {
         self.year > 1582
             || (self.year == 1582
@@ -140,8 +155,12 @@ impl HistoricDate {
 
     /// Returns the number of days in a given month of a year. Also considers whether the given
     /// year-month combination would fall in the Gregorian or Julian calendar.
+    #[must_use]
     pub const fn days_in_month(year: i32, month: Month) -> u8 {
-        use crate::Month::*;
+        use crate::Month::{
+            April, August, December, February, January, July, June, March, May, November, October,
+            September,
+        };
         match month {
             January | March | May | July | August | October | December => 31,
             April | June | September | November => 30,
@@ -183,14 +202,17 @@ impl HistoricDate {
 /// It turns out that the `from_ordinal_date` implementation can largely be factored into one
 /// function that is valid for both the historic, proleptic Gregorian, and proleptic Julian
 /// calendars. After all, the function depends only on whether or not some year is a leap year.
-pub(crate) const fn month_day_from_ordinal_date(
+///
+/// # Errors
+/// Will raise an error if the provided day-of-year does not exist in the given `year`.
+pub const fn month_day_from_ordinal_date(
     year: i32,
     day_of_year: u16,
     is_leap_year: bool,
 ) -> Result<(Month, u8), InvalidDayOfYear> {
     if day_of_year == 0 || day_of_year > 366 || (day_of_year == 366 && !is_leap_year) {
         return Err(InvalidDayOfYear::InvalidDayOfYearCount(
-            InvalidDayOfYearCount { year, day_of_year },
+            InvalidDayOfYearCount { day_of_year, year },
         ));
     }
 
@@ -205,13 +227,16 @@ pub(crate) const fn month_day_from_ordinal_date(
 
     // Validate the output range. This should not actually fail, but we need to handle it for
     // casting to the proper output types.
+    #[allow(clippy::cast_possible_truncation, reason = "Impossible")]
+    #[allow(clippy::cast_sign_loss, reason = "Impossible")]
     let day = match day {
         0..=32 => day as u8,
         _ => unreachable!(),
     };
-    let month = match Month::try_from(month as u8) {
-        Ok(month) => month,
-        Err(_) => unreachable!(),
+    #[allow(clippy::cast_possible_truncation, reason = "Impossible")]
+    #[allow(clippy::cast_sign_loss, reason = "Impossible")]
+    let Ok(month) = Month::try_from(month as u8) else {
+        unreachable!()
     };
     Ok((month, day))
 }

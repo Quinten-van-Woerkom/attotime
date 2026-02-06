@@ -1,3 +1,4 @@
+#![allow(clippy::doc_markdown, reason = "False positive on BeiDou")]
 //! Representation of BeiDou Time (BDT), which is broadcast by the BeiDou constellation.
 
 use crate::{
@@ -8,6 +9,8 @@ use crate::{
 
 pub type BeiDouTime = TimePoint<Bdt>;
 
+/// BeiDou time scale
+///
 /// Time scale representing the BeiDou Time (BDT). BDT has no leap seconds and increases
 /// monotonically at a constant rate. It is distributed as part of the BeiDou broadcast messages,
 /// making it useful in a variety of high-accuracy situations.
@@ -30,6 +33,7 @@ impl AbsoluteTimeScale for Bdt {
 impl UniformDateTimeScale for Bdt {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_bdt(time_point: BeiDouTime) -> Self
     where
         Self: FromTimeScale<Bdt>,
@@ -37,6 +41,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_bdt(self) -> BeiDouTime
     where
         Self: IntoTimeScale<Bdt>,

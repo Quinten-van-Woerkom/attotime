@@ -9,5 +9,5 @@ mod historic_date;
 mod julian_date;
 pub use duration::*;
 mod time_of_day;
-pub(crate) use time_of_day::*;
+pub use time_of_day::*;
 mod time_point;

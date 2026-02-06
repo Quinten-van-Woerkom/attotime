@@ -8,6 +8,8 @@ use crate::{
 
 pub type TdbTime = TimePoint<Tdb>;
 
+/// Barycentric dynamical time scale
+///
 /// Time scale representing the Barycentric Dynamical Time (TDB). This scale is equivalent to the
 /// proper time as experienced by an (idealistic) clock located at and co-moving with the SSB. The
 /// resulting proper time is useful as independent variable for high-accuracy ephemerides for Solar
@@ -31,6 +33,7 @@ impl AbsoluteTimeScale for Tdb {
 impl UniformDateTimeScale for Tdb {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_tdb(time_point: TdbTime) -> Self
     where
         Self: FromTimeScale<Tdb>,
@@ -38,6 +41,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_tdb(self) -> TdbTime
     where
         Self: IntoTimeScale<Tdb>,
@@ -47,6 +51,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
 }
 
 impl FromTimeScale<Tcb> for TdbTime {
+    #[allow(clippy::similar_names, reason = "Subsecond annotation needed")]
     fn from_time_scale(tcb_time: TcbTime) -> Self {
         const TDB0: Duration = Duration::nanoseconds(-65_500);
         const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
@@ -56,7 +61,7 @@ impl FromTimeScale<Tcb> for TdbTime {
             (tcb_since_1977_01_01_00_00_32_184 * 193_814_971).div_round(12_500_000_000_000_000);
         let tdb_since_1977_01_01_00_00_32_184 = tcb_since_1977_01_01_00_00_32_184 - rate_difference;
         let tdb_since_1977_01_01 = tdb_since_1977_01_01_00_00_32_184 + EPOCH_OFFSET;
-        TdbTime::from_time_since_epoch(tdb_since_1977_01_01) + TDB0
+        Self::from_time_since_epoch(tdb_since_1977_01_01) + TDB0
     }
 }
 
@@ -70,7 +75,7 @@ impl FromTimeScale<Tdb> for TcbTime {
         let rate_difference =
             (tdb_since_1977_01_01_00_00_32_184 * 193_814_971).div_round(12_499_999_806_185_029);
         let difference = tdb_since_1977_01_01_00_00_32_184 + rate_difference + TCB0 + EPOCH_OFFSET;
-        TcbTime::from_time_since_epoch(difference)
+        Self::from_time_since_epoch(difference)
     }
 }
 
@@ -82,13 +87,16 @@ impl TtTime {
     ///
     /// See "SOFA Time Scale and Calendar Tools", 2023 May 31, version for the C programming
     /// language. Section 4.3.4 "TDB minus TT".
+    #[allow(clippy::cast_precision_loss, reason = "Intended")]
+    #[allow(clippy::cast_possible_truncation, reason = "Intended")]
+    #[allow(clippy::missing_panics_doc, reason = "Infallible")]
+    #[must_use]
     pub fn approximate_tdb(self) -> TdbTime {
-        let j2000: Self =
-            TtTime::from_historic_datetime(2000, Month::January, 1, 12, 0, 0).unwrap();
-        let mean_anomaly_per_attosecond = 0.017202 / (24. * 60. * 60.);
+        let j2000: Self = Self::from_historic_datetime(2000, Month::January, 1, 12, 0, 0).unwrap();
+        let mean_anomaly_per_attosecond = 0.017_202 / (24. * 60. * 60.);
         let attoseconds_since_j2000 = (self - j2000).count();
         let mean_anomaly = 6.24 + mean_anomaly_per_attosecond * (attoseconds_since_j2000 as f64);
-        let tdb_tt_offset = 0.001657 * mean_anomaly.sin();
+        let tdb_tt_offset = 0.001_657 * mean_anomaly.sin();
         let tdb_tt_attoseconds = tdb_tt_offset * 1e18;
         let tdb_tt_attoseconds = tdb_tt_attoseconds.round() as i128;
         let count = self.count() + tdb_tt_attoseconds;

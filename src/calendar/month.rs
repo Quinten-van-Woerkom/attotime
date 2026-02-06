@@ -34,6 +34,10 @@ pub enum Month {
 }
 
 impl Month {
+    /// Attempts to convert a `u8` month number into the equivalent enum entry.
+    ///
+    /// # Errors
+    /// Will raise an error if the provided month number is larger than 12.
     pub const fn try_from(month: u8) -> Result<Self, InvalidMonthNumber> {
         let month = match month {
             1 => Self::January,

@@ -34,11 +34,13 @@ pub struct Days {
 
 impl Days {
     /// Constructs a new `Days` from a given number of days.
+    #[must_use]
     pub const fn new(count: i32) -> Self {
         Self { count }
     }
 
     /// Constructs a new `Days` from a given number of weeks.
+    #[must_use]
     pub const fn weeks(count: i32) -> Self {
         Self { count: count * 7 }
     }
@@ -46,11 +48,13 @@ impl Days {
     /// Returns the raw number of time units contained in this `Days`. It is advised not to
     /// use this function unless absolutely necessary, as it effectively throws away all time unit
     /// information and safety.
+    #[must_use]
     pub const fn count(&self) -> i32 {
         self.count
     }
 
     /// Returns the `Duration` equivalent to this number of days.
+    #[must_use]
     pub const fn into_duration(&self) -> Duration {
         Duration::days(self.count as i128)
     }
@@ -60,7 +64,7 @@ impl<T> Mul<T> for Days
 where
     T: Into<i32>,
 {
-    type Output = Days;
+    type Output = Self;
 
     /// A `Days` may not be multiplied with another `Days` (as that is undefined), but it may
     /// be multiplied with unitless numbers.
@@ -75,7 +79,7 @@ impl<T> Div<T> for Days
 where
     T: Into<i32>,
 {
-    type Output = Days;
+    type Output = Self;
 
     /// A `Days` may may be divided by unitless numbers to obtain a new `Days`.
     fn div(self, rhs: T) -> Self::Output {
@@ -114,29 +118,34 @@ impl ConstZero for Days {
 }
 
 impl Days {
-    pub fn abs(&self) -> Self {
+    #[must_use]
+    pub const fn abs(&self) -> Self {
         Self {
             count: self.count.abs(),
         }
     }
 
+    #[must_use]
     pub fn abs_sub(&self, other: &Self) -> Self {
         Self {
             count: self.count.abs_sub(&other.count),
         }
     }
 
-    pub fn signum(&self) -> Self {
+    #[must_use]
+    pub const fn signum(&self) -> Self {
         Self {
             count: self.count.signum(),
         }
     }
 
-    pub fn is_positive(&self) -> bool {
+    #[must_use]
+    pub const fn is_positive(&self) -> bool {
         self.count.is_positive()
     }
 
-    pub fn is_negative(&self) -> bool {
+    #[must_use]
+    pub const fn is_negative(&self) -> bool {
         self.count.is_negative()
     }
 }

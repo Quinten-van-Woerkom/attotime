@@ -5,6 +5,8 @@ use crate::{
     errors::InvalidTimeOfDay, time_scale::AbsoluteTimeScale,
 };
 
+/// Uniform date-time scale
+///
 /// Some time scales are uniform with respect to date-times: they do not apply leap seconds. In
 /// such cases, their implementation of the `DateTime` mapping reduces to a simple add-and-multiply
 /// of days, hours, minutes, and seconds with respect to the "arbitrary" measurement epoch in which
@@ -13,6 +15,8 @@ use crate::{
 /// This trait is only a marker trait.
 pub trait UniformDateTimeScale: AbsoluteTimeScale {}
 
+/// Conversion from date-time
+///
 /// This trait may be implemented for time points that can be constructed based on a date-time
 /// pair: they can connect a date and time-of-day to a specific time instant within their internal
 /// scale and vice versa.
@@ -22,8 +26,10 @@ pub trait FromDateTime: Sized {
     /// time scale, for example due to leap seconds deletions or daylight saving time switches.
     type Error: core::error::Error;
 
-    /// Maps a given combination of date and time-of-day to an instant on this time scale. May
-    /// return an error if the input does not represent a valid combination of date and
+    /// Maps a given combination of date and time-of-day to an instant on this time scale.
+    ///
+    /// # Errors
+    /// Will return an error if the input does not represent a valid combination of date and
     /// time-of-day.
     fn from_datetime(date: Date, hour: u8, minute: u8, second: u8) -> Result<Self, Self::Error>;
 }
@@ -53,7 +59,7 @@ where
         let minutes = Duration::minutes(minute.into());
         let seconds = Duration::seconds(second.into());
         let time_since_epoch = hours + minutes + seconds + days_since_scale_epoch;
-        Ok(TimePoint::from_time_since_epoch(time_since_epoch))
+        Ok(Self::from_time_since_epoch(time_since_epoch))
     }
 }
 
@@ -62,8 +68,10 @@ where
 pub trait FromFineDateTime: Sized {
     type Error: core::error::Error;
 
-    /// Maps a given combination of date and fine time-of-day to an instant on this time scale. May
-    /// return an error if the input does not represent a valid combination of date and
+    /// Maps a given combination of date and fine time-of-day to an instant on this time scale.
+    ///
+    /// # Errors
+    /// Will return an error if the input does not represent a valid combination of date and
     /// time-of-day.
     fn from_fine_datetime(
         date: Date,

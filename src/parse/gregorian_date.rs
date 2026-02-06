@@ -12,10 +12,10 @@ impl FromStr for GregorianDate {
     /// digits is accepted for each term.
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         let (date, remainder) = Self::parse_partial(string)?;
-        if !remainder.is_empty() {
-            Err(GregorianDateParsingError::UnexpectedRemainder)
-        } else {
+        if remainder.is_empty() {
             Ok(date)
+        } else {
+            Err(GregorianDateParsingError::UnexpectedRemainder)
         }
     }
 }
@@ -28,6 +28,10 @@ impl GregorianDate {
     ///
     /// On success, returns the resulting `GregorianDate` and any remaining input that was not yet
     /// parsed. On failure, returns a reason indicating why.
+    ///
+    /// # Errors
+    /// Will return an error if the parsed year-month-day do not form a valid Gregorian date.
+    #[allow(clippy::missing_panics_doc, reason = "Internal error panics only")]
     pub fn parse_partial(mut string: &str) -> Result<(Self, &str), GregorianDateParsingError> {
         // Parse year component
         let (year, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
@@ -61,7 +65,7 @@ impl GregorianDate {
         }
         string = string.get(consumed_bytes..).unwrap();
 
-        Ok((GregorianDate::new(year, month, day)?, string))
+        Ok((Self::new(year, month, day)?, string))
     }
 }
 

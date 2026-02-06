@@ -9,6 +9,8 @@ use crate::{
 
 pub type QzssTime = TimePoint<Qzsst>;
 
+/// Quasi-Zenith Satellite System time scale
+///
 /// Time scale representing the Quasi-Zenith Satellite System Time (QZSST). QZSST has no leap
 /// seconds and increases monotonically at a constant rate. It is distributed as part of the QZSST
 /// broadcast messages, making it useful in a variety of high-accuracy situations.
@@ -31,6 +33,7 @@ impl AbsoluteTimeScale for Qzsst {
 impl UniformDateTimeScale for Qzsst {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_qzsst(time_point: QzssTime) -> Self
     where
         Self: FromTimeScale<Qzsst>,
@@ -38,6 +41,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_qzsst(self) -> QzssTime
     where
         Self: IntoTimeScale<Qzsst>,
@@ -50,6 +54,7 @@ impl TerrestrialTime for Qzsst {
     const TAI_OFFSET: Duration = Duration::seconds(-19);
 }
 
+#[allow(clippy::doc_markdown, reason = "False positive on McClain")]
 /// Compares with a known timestamp as obtained from Vallado and McClain's "Fundamentals of
 /// Astrodynamics". Note that that timestamp is given for GPS time: QZSS time is always aligned
 /// with GPS.

@@ -5,11 +5,13 @@ use num_traits::ConstZero;
 
 use crate::{Duration, errors::TimeOfDayParsingError};
 
+/// Time-of-day
+///
 /// Wrapper for a time-of-day, as used primarily for parsing. Explicitly used only for parsing
 /// because it cannot "correctly" encapsulate whether the given time is valid: an associated time
 /// scale is needed for that, to determine whether leap seconds apply.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct TimeOfDay {
+pub struct TimeOfDay {
     pub(crate) hour: u8,
     pub(crate) minute: u8,
     pub(crate) second: u8,
@@ -71,7 +73,7 @@ impl TimeOfDay {
         };
 
         Ok((
-            TimeOfDay {
+            Self {
                 hour,
                 minute,
                 second,

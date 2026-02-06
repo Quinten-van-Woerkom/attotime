@@ -2,6 +2,8 @@
 
 use crate::TimePoint;
 
+/// Conversion from tie scale
+///
 /// Trait representing the ability to convert from one scale into another. Note that this
 /// conversion must always succeed: barring arithmetic overflows (on which panics are advised),
 /// it must always be possible to relate the time of two scales.
@@ -14,6 +16,8 @@ pub trait FromTimeScale<Scale: ?Sized> {
     fn from_time_scale(time_point: TimePoint<Scale>) -> Self;
 }
 
+/// Conversion into time scale
+///
 /// Trait representing the ability to convert from one scale into another. Note that this
 /// conversion must always succeed: barring arithmetic overflows (on which panics are advised),
 /// it must always be possible to relate the time of two scales.

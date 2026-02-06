@@ -8,6 +8,8 @@ use crate::{
 
 pub type TcgTime = TimePoint<Tcg>;
 
+/// Geocentric coordinate time scale
+///
 /// Time scale representing the Geocentric Coordinate Time (TCG). This scale is equivalent to the
 /// proper time as experienced by an (idealistic) clock outside of Earth's gravity well, but
 /// co-moving with the Earth. The resulting proper time is useful as independent variable for
@@ -32,6 +34,7 @@ impl AbsoluteTimeScale for Tcg {
 impl UniformDateTimeScale for Tcg {}
 
 impl<Scale: ?Sized> TimePoint<Scale> {
+    #[must_use]
     pub fn from_tcg(time_point: TcgTime) -> Self
     where
         Self: FromTimeScale<Tcg>,
@@ -39,6 +42,7 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self::from_time_scale(time_point)
     }
 
+    #[must_use]
     pub fn into_tcg(self) -> TcgTime
     where
         Self: IntoTimeScale<Tcg>,
@@ -55,7 +59,7 @@ impl FromTimeScale<Tt> for TcgTime {
         let rate_difference = (tt_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
             .div_round(4_999_999_996_515_354_933);
         let tcg_since_1977_01_01_00_00_32_184 = tt_since_1977_01_01_00_00_32_184 + rate_difference;
-        TcgTime::from_time_since_epoch(tcg_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
+        Self::from_time_since_epoch(tcg_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
     }
 }
 
@@ -67,7 +71,7 @@ impl FromTimeScale<Tcg> for TtTime {
         let rate_difference = (tcg_since_1977_01_01_00_00_32_184 * 3_484_645_067i128)
             .div_round(5_000_000_000_000_000_000);
         let tt_since_1977_01_01_00_00_32_184 = tcg_since_1977_01_01_00_00_32_184 - rate_difference;
-        TtTime::from_time_since_epoch(tt_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
+        Self::from_time_since_epoch(tt_since_1977_01_01_00_00_32_184) + EPOCH_OFFSET
     }
 }
 

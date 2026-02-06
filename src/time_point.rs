@@ -16,6 +16,8 @@ use crate::{
     time_scale::{AbsoluteTimeScale, TimeScale, UniformDateTimeScale},
 };
 
+/// Instant in time
+///
 /// A `TimePoint` identifies a specific instant in time. It is templated on a `Representation` and
 /// `Period`, which the define the characteristics of the `Duration` type used to represent the
 /// time elapsed since the epoch of the underlying time scale `Scale`.
@@ -26,6 +28,7 @@ pub struct TimePoint<Scale: ?Sized> {
 
 impl<Scale: ?Sized> TimePoint<Scale> {
     /// Constructs a new `TimePoint` from a known time since epoch.
+    #[must_use]
     pub const fn from_time_since_epoch(time_since_epoch: Duration) -> Self {
         Self {
             time_since_epoch,
@@ -34,42 +37,51 @@ impl<Scale: ?Sized> TimePoint<Scale> {
     }
 
     /// Returns the time elapsed since the epoch of the time scale associated with this instant.
+    #[must_use]
     pub const fn time_since_epoch(&self) -> Duration {
         self.time_since_epoch
     }
 
     /// Returns the raw underlying representation of this time point.
+    #[must_use]
     pub const fn count(&self) -> i128 {
         self.time_since_epoch().count()
     }
 
     /// Converts towards a different time unit, rounding towards the nearest whole unit.
-    pub fn round<Target>(self) -> TimePoint<Scale>
+    #[must_use]
+    pub const fn round<Target>(self) -> Self
     where
         Target: UnitRatio,
     {
-        TimePoint::from_time_since_epoch(self.time_since_epoch.round::<Target>())
+        Self::from_time_since_epoch(self.time_since_epoch.round::<Target>())
     }
 
     /// Converts towards a different time unit, rounding towards positive infinity if the unit is
     /// not entirely commensurate with the present unit.
-    pub fn ceil<Target>(self) -> TimePoint<Scale>
+    #[must_use]
+    pub fn ceil<Target>(self) -> Self
     where
         Target: UnitRatio,
     {
-        TimePoint::from_time_since_epoch(self.time_since_epoch.ceil::<Target>())
+        Self::from_time_since_epoch(self.time_since_epoch.ceil::<Target>())
     }
 
     /// Converts towards a different time unit, rounding towards negative infinity if the unit is
     /// not entirely commensurate with the present unit.
-    pub fn floor<Target>(self) -> TimePoint<Scale>
+    #[must_use]
+    pub fn floor<Target>(self) -> Self
     where
         Target: UnitRatio,
     {
-        TimePoint::from_time_since_epoch(self.time_since_epoch.floor::<Target>())
+        Self::from_time_since_epoch(self.time_since_epoch.floor::<Target>())
     }
 
     /// Constructs a `TimePoint` in the given time scale, based on a historic date-time.
+    ///
+    /// # Errors
+    /// Will raise an error if the requested combination of year-month-day does not exist in the
+    /// historic calendar, or if the requested time-of-day does not exist for the given date.
     pub fn from_historic_datetime(
         year: i32,
         month: Month,
@@ -89,6 +101,11 @@ impl<Scale: ?Sized> TimePoint<Scale> {
     }
 
     /// Constructs a `TimePoint` in the given time scale, based on a Gregorian date-time.
+    ///
+    /// # Errors
+    /// Will raise an error if the requested combination of year-month-day does not exist in the
+    /// proleptic Gregorian calendar, or if the requested time-of-day does not exist for the given
+    /// date.
     pub fn from_gregorian_datetime(
         year: i32,
         month: Month,
@@ -108,6 +125,11 @@ impl<Scale: ?Sized> TimePoint<Scale> {
     }
 
     /// Constructs a `TimePoint` in the given time scale, based on a Julian date-time.
+    ///
+    /// # Errors
+    /// Will raise an error if the requested combination of year-month-day does not exist in the
+    /// proleptic Julian calendar, or if the requested time-of-day does not exist for the given
+    /// date.
     pub fn from_julian_datetime(
         year: i32,
         month: Month,
@@ -127,9 +149,9 @@ impl<Scale: ?Sized> TimePoint<Scale> {
     }
 }
 
-impl<Scale: ?Sized> TimePoint<Scale>
+impl<Scale> TimePoint<Scale>
 where
-    Scale: UniformDateTimeScale,
+    Scale: ?Sized + UniformDateTimeScale,
 {
     /// Constructs a time point from a modified Julian date, expressed in the resulting time scale
     /// itself. The modified Julian date uses 17 November, 1858 (historic calendar) as epoch, or
@@ -140,6 +162,7 @@ where
     /// difficult to implement interpretations of the fractional part of a day. Based on the
     /// "Resolution B1 on the use of Julian Dates" of the IAU, it is also not recommended to use
     /// such Julian date expressions: hence, we do not support it.
+    #[must_use]
     pub fn from_modified_julian_date(mjd: ModifiedJulianDate) -> Self {
         const MODIFIED_JULIAN_EPOCH: Date =
             match Date::from_historic_date(1858, Month::November, 17) {
@@ -152,11 +175,13 @@ where
     }
 }
 
-impl<Scale: ?Sized> TimePoint<Scale>
+impl<Scale> TimePoint<Scale>
 where
-    Scale: AbsoluteTimeScale,
+    Scale: ?Sized + AbsoluteTimeScale,
 {
     /// Converts this time point into the equivalent Julian day representation.
+    #[allow(clippy::missing_panics_doc, reason = "Infallible")]
+    #[must_use]
     pub fn into_modified_julian_date(&self) -> ModifiedJulianDate {
         const MODIFIED_JULIAN_EPOCH: Date =
             match Date::from_historic_date(1858, Month::November, 17) {
@@ -177,9 +202,9 @@ where
 impl<Scale> FromFineDateTime for TimePoint<Scale>
 where
     Scale: ?Sized,
-    TimePoint<Scale>: FromDateTime,
+    Self: FromDateTime,
 {
-    type Error = <TimePoint<Scale> as FromDateTime>::Error;
+    type Error = <Self as FromDateTime>::Error;
 
     fn from_fine_datetime(
         date: Date,
@@ -188,20 +213,22 @@ where
         second: u8,
         subseconds: Duration,
     ) -> Result<Self, Self::Error> {
-        let coarse_time_point: TimePoint<Scale> =
-            TimePoint::from_datetime(date, hour, minute, second)?;
+        let coarse_time_point: Self = Self::from_datetime(date, hour, minute, second)?;
         Ok(coarse_time_point + subseconds)
     }
 }
 
 impl<Scale> TimePoint<Scale>
 where
-    Self: FromFineDateTime,
-    TimePoint<Scale>: FromDateTime,
+    Self: FromFineDateTime + FromDateTime,
     Scale: ?Sized,
 {
     /// Constructs a `TimePoint` in the given time scale, based on a subsecond-accuracy historic
     /// date-time.
+    ///
+    /// # Errors
+    /// Will raise an error if the requested combination of year-month-day does not exist in the
+    /// historic calendar, or if the requested time-of-day does not exist for the given date.
     pub fn from_fine_historic_datetime(
         year: i32,
         month: Month,
@@ -220,6 +247,11 @@ where
 
     /// Constructs a `TimePoint` in the given time scale, based on a subsecond-accuracy Gregorian
     /// date-time.
+    ///
+    /// # Errors
+    /// Will raise an error if the requested combination of year-month-day does not exist in the
+    /// proleptic Gregorian calendar, or if the requested time-of-day does not exist for the given
+    /// date.
     pub fn from_fine_gregorian_datetime(
         year: i32,
         month: Month,
@@ -238,6 +270,11 @@ where
 
     /// Constructs a `TimePoint` in the given time scale, based on a subsecond-accuracy Julian
     /// date-time.
+    ///
+    /// # Errors
+    /// Will raise an error if the requested combination of year-month-day does not exist in the
+    /// proleptic Julian calendar, or if the requested time-of-day does not exist for the given
+    /// date.
     pub fn from_fine_julian_datetime(
         year: i32,
         month: Month,
@@ -273,18 +310,21 @@ where
     Self: IntoDateTime,
 {
     /// Maps a `TimePoint` towards the corresponding historic date and time-of-day.
+    #[must_use]
     pub fn into_historic_datetime(self) -> (HistoricDate, u8, u8, u8) {
         let (date, hour, minute, second) = self.into_datetime();
         (date.into(), hour, minute, second)
     }
 
     /// Maps a `TimePoint` towards the corresponding proleptic Gregorian date and time-of-day.
+    #[must_use]
     pub fn into_gregorian_datetime(self) -> (GregorianDate, u8, u8, u8) {
         let (date, hour, minute, second) = self.into_datetime();
         (date.into(), hour, minute, second)
     }
 
     /// Maps a `TimePoint` towards the corresponding Julian date and time-of-day.
+    #[must_use]
     pub fn into_julian_datetime(self) -> (JulianDate, u8, u8, u8) {
         let (date, hour, minute, second) = self.into_datetime();
         (date.into(), hour, minute, second)
@@ -295,16 +335,19 @@ impl<Scale: ?Sized> TimePoint<Scale>
 where
     Self: IntoFineDateTime,
 {
+    #[must_use]
     pub fn into_fine_historic_datetime(self) -> (HistoricDate, u8, u8, u8, Duration) {
         let (date, hour, minute, second, subseconds) = self.into_fine_datetime();
         (date.into(), hour, minute, second, subseconds)
     }
 
+    #[must_use]
     pub fn into_fine_gregorian_datetime(self) -> (GregorianDate, u8, u8, u8, Duration) {
         let (date, hour, minute, second, subseconds) = self.into_fine_datetime();
         (date.into(), hour, minute, second, subseconds)
     }
 
+    #[must_use]
     pub fn into_fine_julian_datetime(self) -> (JulianDate, u8, u8, u8, Duration) {
         let (date, hour, minute, second, subseconds) = self.into_fine_datetime();
         (date.into(), hour, minute, second, subseconds)
@@ -424,7 +467,7 @@ fn truncated_format() {
         23,
         21,
         58,
-        crate::Duration::picoseconds(450103789401i128),
+        crate::Duration::picoseconds(450_103_789_401_i128),
     )
     .unwrap();
     assert_eq!(format!("{time:.9}"), "1998-12-17T23:21:58.450103789 UTC");
@@ -523,7 +566,7 @@ where
     type Output = Self;
 
     fn add(self, rhs: Duration) -> Self::Output {
-        TimePoint::from_time_since_epoch(self.time_since_epoch + rhs)
+        Self::from_time_since_epoch(self.time_since_epoch + rhs)
     }
 }
 
@@ -543,7 +586,7 @@ where
     type Output = Self;
 
     fn sub(self, rhs: Duration) -> Self::Output {
-        TimePoint::from_time_since_epoch(self.time_since_epoch - rhs)
+        Self::from_time_since_epoch(self.time_since_epoch - rhs)
     }
 }
 

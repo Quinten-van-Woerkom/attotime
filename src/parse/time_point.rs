@@ -27,7 +27,7 @@ where
         let (historic_date, mut string) = HistoricDate::parse_partial(string)?;
 
         // Parse the mandatory time designator 'T'
-        if string.starts_with("T") {
+        if string.starts_with('T') {
             string = string.get(1..).unwrap();
         } else {
             return Err(TimePointParsingError::ExpectedTimeDesignator);
@@ -36,7 +36,7 @@ where
         let (time_of_day, mut string) = TimeOfDay::parse_partial(string)?;
 
         // Finally, the time point must end with a space, followed by the time zone abbreviation.
-        if string.starts_with(" ") {
+        if string.starts_with(' ') {
             string = string.get(1..).unwrap();
         } else {
             return Err(TimePointParsingError::ExpectedSpace);
@@ -125,6 +125,7 @@ fn check_historic_datetime(
 }
 
 #[test]
+#[allow(clippy::too_many_lines, reason = "Large number of test values")]
 fn known_timestamps() {
     use num_traits::ConstZero;
 
@@ -158,7 +159,7 @@ fn known_timestamps() {
         12,
         34,
         56,
-        Duration::microseconds(789123),
+        Duration::microseconds(789_123),
     );
     check_historic_datetime(
         "1961-01-01T00:00:00 TAI",
@@ -188,7 +189,7 @@ fn known_timestamps() {
         23,
         59,
         59,
-        Duration::microseconds(999000),
+        Duration::microseconds(999_000),
     );
     check_historic_datetime(
         "2025-07-16T16:23:24.000000000 TAI",
@@ -208,7 +209,7 @@ fn known_timestamps() {
         8,
         2,
         37,
-        Duration::microseconds(123456),
+        Duration::microseconds(123_456),
     );
     check_historic_datetime(
         "2760-04-01T21:59:58 TAI",
