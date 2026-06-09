@@ -2,7 +2,7 @@
 //! a clock at rest in a coordinate frame co-moving with the barycentre of the Solar system.
 
 use crate::{
-    Date, FromTimeScale, IntoTimeScale, Month, TimePoint,
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, Tdb, TdbTime, TimePoint,
     time_scale::{AbsoluteTimeScale, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -48,6 +48,20 @@ impl<Scale: ?Sized> TimePoint<Scale> {
         Self: IntoTimeScale<Tcb>,
     {
         self.into_time_scale()
+    }
+}
+
+impl FromTimeScale<Tdb> for TcbTime {
+    fn from_time_scale(time_point: TdbTime) -> Self {
+        const TCB0: Duration = Duration::nanoseconds(65_500 * 12_500_000_000_000_000)
+            .div_round(12_499_999_806_185_029);
+        const EPOCH_OFFSET: Duration = Duration::milliseconds(32_184);
+        let tdb_since_1977_01_01 = time_point.time_since_epoch();
+        let tdb_since_1977_01_01_00_00_32_184 = tdb_since_1977_01_01 - EPOCH_OFFSET;
+        let rate_difference =
+            (tdb_since_1977_01_01_00_00_32_184 * 193_814_971).div_round(12_499_999_806_185_029);
+        let difference = tdb_since_1977_01_01_00_00_32_184 + rate_difference + TCB0 + EPOCH_OFFSET;
+        Self::from_time_since_epoch(difference)
     }
 }
 

@@ -1,8 +1,11 @@
 //! Implementation of Terrestrial Time (TT).
 
 use crate::{
-    Date, Duration, FromTimeScale, IntoTimeScale, Month, TimePoint,
-    time_scale::{AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale},
+    Date, Duration, FromTimeScale, IntoTimeScale, Month, Tdb, TdbTime, TimePoint,
+    time_scale::{
+        AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale,
+        tdb::tdb_tt_offset,
+    },
 };
 
 pub type TtTime = TimePoint<Tt>;
@@ -50,6 +53,43 @@ impl<Scale: ?Sized> TimePoint<Scale> {
 
 impl TerrestrialTime for Tt {
     const TAI_OFFSET: Duration = Duration::milliseconds(32_184);
+}
+
+impl TtTime {
+    /// Approximates Barycentric Dynamical Time (TDB) from TT using a simplified expression
+    /// following the IAU SOFA estimate `TDB = TT + 0.001657 * sin(g)` where `g` is an estimate of
+    /// the Earth's mean anomaly. The resulting estimate is accurate to 50 microseconds from 1980
+    /// to 2100.
+    ///
+    /// See "SOFA Time Scale and Calendar Tools", 2023 May 31, version for the C programming
+    /// language. Section 4.3.4 "TDB minus TT".
+    #[allow(clippy::cast_precision_loss, reason = "Intended")]
+    #[allow(clippy::cast_possible_truncation, reason = "Intended")]
+    #[allow(clippy::missing_panics_doc, reason = "Infallible")]
+    #[must_use]
+    pub fn approximate_tdb(self) -> TdbTime {
+        const MEAN_ANOMALY_PER_ATTOSECOND: f64 = 0.017_202 / (24. * 60. * 60. * 1e18);
+        let j2000: Self = Self::from_historic_datetime(2000, Month::January, 1, 12, 0, 0).unwrap();
+        let attoseconds_since_j2000 = (self - j2000).count();
+        let mean_anomaly =
+            MEAN_ANOMALY_PER_ATTOSECOND.mul_add(attoseconds_since_j2000 as f64, 6.24);
+        let tdb_tt_offset = 0.001_657 * mean_anomaly.sin();
+        let tdb_tt_attoseconds = tdb_tt_offset * 1e18;
+        let tdb_tt_attoseconds = tdb_tt_attoseconds.round() as i128;
+        let count = self.count() + tdb_tt_attoseconds;
+        let time_since_epoch = Duration::attoseconds(count);
+        TdbTime::from_time_since_epoch(time_since_epoch)
+    }
+}
+
+impl FromTimeScale<Tdb> for TtTime {
+    #[allow(clippy::cast_possible_truncation, reason = "Intended")]
+    fn from_time_scale(time_point: TimePoint<Tdb>) -> Self {
+        let tdb_tt_offset = tdb_tt_offset(time_point);
+        let tdb_tt_attoseconds = (tdb_tt_offset * 1e18).round() as i128;
+        let count = time_point.count() - tdb_tt_attoseconds;
+        Self::from_time_since_epoch(Duration::attoseconds(count))
+    }
 }
 
 #[allow(clippy::doc_markdown, reason = "False positive on McClain")]
