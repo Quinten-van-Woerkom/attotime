@@ -3,7 +3,7 @@
 
 use crate::{
     Date, Duration, FromTimeScale, IntoTimeScale, LiteralRatio, Month, Tcb, TcbTime,
-    TerrestrialTime, TimePoint, TtTime,
+    TerrestrialTime, TimePoint, Tt, TtTime,
     time_scale::{AbsoluteTimeScale, TimeScale, datetime::UniformDateTimeScale},
 };
 
@@ -94,6 +94,7 @@ impl FromTimeScale<Tcb> for TdbTime {
 impl<T> FromTimeScale<T> for TdbTime
 where
     T: TerrestrialTime,
+    TimePoint<T>: IntoTimeScale<Tt>,
 {
     #[allow(clippy::cast_possible_truncation, reason = "Intended")]
     fn from_time_scale(time_point: TimePoint<T>) -> Self {

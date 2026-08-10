@@ -2,9 +2,11 @@
 //! Representation of BeiDou Time (BDT), which is broadcast by the BeiDou constellation.
 
 use crate::{
-    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint,
-    UniformDateTimeScale,
-    time_scale::{AbsoluteTimeScale, TimeScale},
+    Date, Duration, FromTimeScale, Glonasst, Gpst, Gst, IntoTimeScale, Month, Qzsst, Tai,
+    TerrestrialTime, TimePoint, Tt, UniformDateTimeScale, Utc,
+    time_scale::{
+        AbsoluteTimeScale, TimeScale, terrestrial_time::impl_terrestrial_time_conversion,
+    },
 };
 
 pub type BeiDouTime = TimePoint<Bdt>;
@@ -22,6 +24,14 @@ impl TimeScale for Bdt {
 
     const ABBREVIATION: &'static str = "BDT";
 }
+
+impl_terrestrial_time_conversion!(Bdt, Glonasst);
+impl_terrestrial_time_conversion!(Bdt, Gpst);
+impl_terrestrial_time_conversion!(Bdt, Gst);
+impl_terrestrial_time_conversion!(Bdt, Qzsst);
+impl_terrestrial_time_conversion!(Bdt, Tai);
+impl_terrestrial_time_conversion!(Bdt, Tt);
+impl_terrestrial_time_conversion!(Bdt, Utc);
 
 impl AbsoluteTimeScale for Bdt {
     const EPOCH: Date = match Date::from_historic_date(2006, Month::January, 1) {

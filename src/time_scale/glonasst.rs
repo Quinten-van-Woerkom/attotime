@@ -1,11 +1,13 @@
 //! Implementation of the GLONASS Time (GLONASST) time scale.
 
 use crate::{
-    Days, Duration, FromLeapSecondDateTime, FromTimeScale, IntoLeapSecondDateTime, IntoTimeScale,
-    LeapSecondProvider, Second, TerrestrialTime, TimePoint,
+    Bdt, Days, Duration, FromLeapSecondDateTime, FromTimeScale, Gpst, Gst, IntoLeapSecondDateTime,
+    IntoTimeScale, LeapSecondProvider, Qzsst, Second, Tai, TerrestrialTime, TimePoint, Tt, Utc,
     calendar::{Date, Month},
     errors::{InvalidGlonassDateTime, InvalidTimeOfDay},
-    time_scale::{AbsoluteTimeScale, TimeScale},
+    time_scale::{
+        AbsoluteTimeScale, TimeScale, terrestrial_time::impl_terrestrial_time_conversion,
+    },
     units::{SecondsPerDay, SecondsPerHour, SecondsPerMinute},
 };
 
@@ -26,6 +28,14 @@ impl TimeScale for Glonasst {
 
     const ABBREVIATION: &'static str = "GLONASST";
 }
+
+impl_terrestrial_time_conversion!(Glonasst, Bdt);
+impl_terrestrial_time_conversion!(Glonasst, Gpst);
+impl_terrestrial_time_conversion!(Glonasst, Gst);
+impl_terrestrial_time_conversion!(Glonasst, Qzsst);
+impl_terrestrial_time_conversion!(Glonasst, Tai);
+impl_terrestrial_time_conversion!(Glonasst, Tt);
+impl_terrestrial_time_conversion!(Glonasst, Utc);
 
 impl AbsoluteTimeScale for Glonasst {
     const EPOCH: Date = match Date::from_historic_date(1996, Month::January, 1) {

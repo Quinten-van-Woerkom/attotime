@@ -16,6 +16,12 @@ pub trait FromTimeScale<Scale: ?Sized> {
     fn from_time_scale(time_point: TimePoint<Scale>) -> Self;
 }
 
+impl<Scale: ?Sized> FromTimeScale<Scale> for TimePoint<Scale> {
+    fn from_time_scale(time_point: Self) -> Self {
+        time_point
+    }
+}
+
 /// Conversion into time scale
 ///
 /// Trait representing the ability to convert from one scale into another. Note that this

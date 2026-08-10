@@ -1,7 +1,7 @@
 //! This file implements the concept of a "terrestrial time", referring to any time scale which
 //! represents the Platonic ideal of a time scale representing the elapsed time on the Earth geoid.
 
-use crate::{Duration, FromTimeScale, TimePoint, time_scale::AbsoluteTimeScale};
+use crate::{Duration, time_scale::AbsoluteTimeScale};
 
 /// Terrestrial time scales
 ///
@@ -13,27 +13,33 @@ pub trait TerrestrialTime: AbsoluteTimeScale {
     const TAI_OFFSET: Duration;
 }
 
-impl<ScaleFrom, ScaleInto> FromTimeScale<ScaleFrom> for TimePoint<ScaleInto>
-where
-    ScaleFrom: TerrestrialTime,
-    ScaleInto: TerrestrialTime,
-{
-    fn from_time_scale(time_point: TimePoint<ScaleFrom>) -> Self {
-        let epoch_offset = ScaleFrom::EPOCH
-            .elapsed_calendar_days_since(ScaleInto::EPOCH)
-            .into();
-        let from_offset: Duration = ScaleFrom::TAI_OFFSET;
-        let into_offset: Duration = ScaleInto::TAI_OFFSET;
-        // Depending on the sign, we flip the subtraction order. This is useful to ensure that we
-        // do not overflow past zero for unsigned integers, and to keep the integer range needed as
-        // small as possible in general.
-        let time_since_epoch = if from_offset >= into_offset {
-            let scale_offset = from_offset - into_offset;
-            time_point.time_since_epoch() - scale_offset + epoch_offset
-        } else {
-            let scale_offset = into_offset - from_offset;
-            time_point.time_since_epoch() + scale_offset + epoch_offset
-        };
-        Self::from_time_since_epoch(time_since_epoch)
-    }
+/// Convenience macro for implementing a time scale conversion between two terrestrial times, for which it is no more than a simple epoch offset.
+macro_rules! impl_terrestrial_time_conversion {
+    ($from:ty, $into:ty) => {
+        impl FromTimeScale<$from> for TimePoint<$into>
+        where
+            $from: TerrestrialTime,
+            $into: TerrestrialTime,
+        {
+            fn from_time_scale(time_point: TimePoint<$from>) -> Self {
+                let epoch_offset = <$from>::EPOCH
+                    .elapsed_calendar_days_since(<$into>::EPOCH)
+                    .into();
+                let from_offset: Duration = <$from>::TAI_OFFSET;
+                let into_offset: Duration = <$into>::TAI_OFFSET;
+                // Depending on the sign, we flip the subtraction order. This is useful to ensure that we
+                // do not overflow past zero for unsigned integers, and to keep the integer range needed as
+                // small as possible in general.
+                let time_since_epoch = if from_offset >= into_offset {
+                    let scale_offset = from_offset - into_offset;
+                    time_point.time_since_epoch() - scale_offset + epoch_offset
+                } else {
+                    let scale_offset = into_offset - from_offset;
+                    time_point.time_since_epoch() + scale_offset + epoch_offset
+                };
+                Self::from_time_since_epoch(time_since_epoch)
+            }
+        }
+    };
 }
+pub(super) use impl_terrestrial_time_conversion;

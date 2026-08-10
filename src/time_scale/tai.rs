@@ -3,8 +3,12 @@
 use num_traits::ConstZero;
 
 use crate::{
-    Date, Duration, FromTimeScale, IntoTimeScale, Month, TimePoint,
-    time_scale::{AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale},
+    Bdt, Date, Duration, FromTimeScale, Glonasst, Gpst, Gst, IntoTimeScale, Month, Qzsst,
+    TimePoint, Tt, Utc,
+    time_scale::{
+        AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale,
+        terrestrial_time::impl_terrestrial_time_conversion,
+    },
 };
 
 pub type TaiTime = TimePoint<Tai>;
@@ -22,6 +26,14 @@ impl TimeScale for Tai {
 
     const ABBREVIATION: &'static str = "TAI";
 }
+
+impl_terrestrial_time_conversion!(Tai, Bdt);
+impl_terrestrial_time_conversion!(Tai, Glonasst);
+impl_terrestrial_time_conversion!(Tai, Gpst);
+impl_terrestrial_time_conversion!(Tai, Gst);
+impl_terrestrial_time_conversion!(Tai, Qzsst);
+impl_terrestrial_time_conversion!(Tai, Tt);
+impl_terrestrial_time_conversion!(Tai, Utc);
 
 impl AbsoluteTimeScale for Tai {
     const EPOCH: Date = match Date::from_historic_date(1958, Month::January, 1) {

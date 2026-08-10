@@ -2,9 +2,11 @@
 //! Quasi-Zenith Satellite System constellation.
 
 use crate::{
-    Date, Duration, FromTimeScale, IntoTimeScale, Month, TerrestrialTime, TimePoint,
-    UniformDateTimeScale,
-    time_scale::{AbsoluteTimeScale, TimeScale},
+    Bdt, Date, Duration, FromTimeScale, Glonasst, Gpst, Gst, IntoTimeScale, Month, Tai,
+    TerrestrialTime, TimePoint, Tt, UniformDateTimeScale, Utc,
+    time_scale::{
+        AbsoluteTimeScale, TimeScale, terrestrial_time::impl_terrestrial_time_conversion,
+    },
 };
 
 pub type QzssTime = TimePoint<Qzsst>;
@@ -22,6 +24,14 @@ impl TimeScale for Qzsst {
 
     const ABBREVIATION: &'static str = "QZSST";
 }
+
+impl_terrestrial_time_conversion!(Qzsst, Bdt);
+impl_terrestrial_time_conversion!(Qzsst, Glonasst);
+impl_terrestrial_time_conversion!(Qzsst, Gpst);
+impl_terrestrial_time_conversion!(Qzsst, Gst);
+impl_terrestrial_time_conversion!(Qzsst, Tai);
+impl_terrestrial_time_conversion!(Qzsst, Tt);
+impl_terrestrial_time_conversion!(Qzsst, Utc);
 
 impl AbsoluteTimeScale for Qzsst {
     const EPOCH: Date = match Date::from_historic_date(1999, Month::August, 22) {

@@ -3,10 +3,13 @@
 use num_traits::ConstZero;
 
 use crate::{
-    Date, Days, Duration, FromDateTime, FromTimeScale, IntoDateTime, IntoTimeScale,
-    LeapSecondProvider, Month, Second, StaticLeapSecondProvider, TerrestrialTime, TimePoint,
+    Bdt, Date, Days, Duration, FromDateTime, FromTimeScale, Glonasst, Gpst, Gst, IntoDateTime,
+    IntoTimeScale, LeapSecondProvider, Month, Qzsst, Second, StaticLeapSecondProvider, Tai,
+    TerrestrialTime, TimePoint, Tt,
     errors::{InvalidTimeOfDay, InvalidUtcDateTime},
-    time_scale::{AbsoluteTimeScale, TimeScale},
+    time_scale::{
+        AbsoluteTimeScale, TimeScale, terrestrial_time::impl_terrestrial_time_conversion,
+    },
     units::{SecondsPerDay, SecondsPerHour, SecondsPerMinute},
 };
 
@@ -37,6 +40,14 @@ impl TimeScale for Utc {
 
     const ABBREVIATION: &'static str = "UTC";
 }
+
+impl_terrestrial_time_conversion!(Utc, Bdt);
+impl_terrestrial_time_conversion!(Utc, Glonasst);
+impl_terrestrial_time_conversion!(Utc, Gpst);
+impl_terrestrial_time_conversion!(Utc, Gst);
+impl_terrestrial_time_conversion!(Utc, Qzsst);
+impl_terrestrial_time_conversion!(Utc, Tai);
+impl_terrestrial_time_conversion!(Utc, Tt);
 
 impl AbsoluteTimeScale for Utc {
     /// This epoch is the exact date at which the modern definition of UTC started. This makes it

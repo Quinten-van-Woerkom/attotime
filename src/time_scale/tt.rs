@@ -1,10 +1,11 @@
 //! Implementation of Terrestrial Time (TT).
 
 use crate::{
-    Date, Duration, FromTimeScale, IntoTimeScale, Month, Tdb, TdbTime, TimePoint,
+    Bdt, Date, Duration, FromTimeScale, Glonasst, Gpst, Gst, IntoTimeScale, Month, Qzsst, Tai, Tdb,
+    TdbTime, TimePoint, Utc,
     time_scale::{
         AbsoluteTimeScale, TerrestrialTime, TimeScale, datetime::UniformDateTimeScale,
-        tdb::tdb_tt_offset,
+        tdb::tdb_tt_offset, terrestrial_time::impl_terrestrial_time_conversion,
     },
 };
 
@@ -23,6 +24,14 @@ impl TimeScale for Tt {
 
     const ABBREVIATION: &'static str = "TT";
 }
+
+impl_terrestrial_time_conversion!(Tt, Bdt);
+impl_terrestrial_time_conversion!(Tt, Glonasst);
+impl_terrestrial_time_conversion!(Tt, Gpst);
+impl_terrestrial_time_conversion!(Tt, Gst);
+impl_terrestrial_time_conversion!(Tt, Qzsst);
+impl_terrestrial_time_conversion!(Tt, Tai);
+impl_terrestrial_time_conversion!(Tt, Utc);
 
 impl AbsoluteTimeScale for Tt {
     const EPOCH: Date = match Date::from_historic_date(1977, Month::January, 1) {
