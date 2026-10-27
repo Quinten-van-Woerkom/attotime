@@ -180,14 +180,15 @@ impl Duration {
         self.fractional_digits(precision, 10)
     }
 
-    /// Converts towards a different time unit, rounding towards the nearest whole unit.
+    /// Converts towards a different time unit, rounding towards the nearest whole unit. Ties are
+    /// rounded away from zero.
     #[must_use]
     pub const fn round<Target>(self) -> Self
     where
         Target: UnitRatio + ?Sized,
     {
         let unit_attoseconds = Target::ATTOSECONDS;
-        let count = ((self.count + unit_attoseconds / 2) / unit_attoseconds) * unit_attoseconds;
+        let count = div_round_i128(self.count, unit_attoseconds) * unit_attoseconds;
         Self { count }
     }
 
@@ -247,10 +248,10 @@ impl Duration {
         (factored, remainder)
     }
 
-    /// Divides by an `i128`, rounding to the nearest result.
+    /// Divides by an `i128`, rounding to the nearest result. Ties are rounded away from zero.
     #[must_use]
     pub const fn div_round(self, other: i128) -> Self {
-        let count = (self.count + other / 2) / other;
+        let count = div_round_i128(self.count, other);
         Self { count }
     }
 
@@ -270,6 +271,85 @@ impl Duration {
         let remainder = T::from(numerator % denominator).unwrap();
         let fraction = remainder / T::from(denominator).unwrap();
         quotient + fraction
+    }
+}
+
+/// Integer division that rounds to the nearest integer, with ties rounded away from zero. Correct
+/// for all signs of numerator and denominator, and does not overflow for any inputs for which the
+/// quotient itself is representable.
+const fn div_round_i128(numerator: i128, denominator: i128) -> i128 {
+    let quotient = numerator / denominator;
+    let remainder = (numerator % denominator).unsigned_abs();
+    // Equivalent to `2 * |remainder| >= |denominator|`, but cannot overflow.
+    if remainder >= denominator.unsigned_abs() - remainder {
+        if (numerator < 0) == (denominator < 0) {
+            quotient + 1
+        } else {
+            quotient - 1
+        }
+    } else {
+        quotient
+    }
+}
+
+/// Verifies that rounding division results in the nearest integer for all sign combinations,
+/// including ties.
+#[test]
+fn rounding_division() {
+    assert_eq!(div_round_i128(7, 2), 4);
+    assert_eq!(div_round_i128(-7, 2), -4);
+    assert_eq!(div_round_i128(7, -2), -4);
+    assert_eq!(div_round_i128(-7, -2), 4);
+    assert_eq!(div_round_i128(-6, 10), -1);
+    assert_eq!(div_round_i128(-4, 10), 0);
+    assert_eq!(div_round_i128(6, -10), -1);
+    assert_eq!(div_round_i128(i128::MAX, i128::MAX), 1);
+    assert_eq!(div_round_i128(i128::MIN, i128::MAX), -1);
+    assert_eq!(div_round_i128(i128::MAX, i128::MIN), -1);
+    assert_eq!(div_round_i128(i128::MAX - 1, i128::MAX), 1);
+    assert_eq!(div_round_i128(i128::MAX / 2, i128::MAX), 0);
+
+    assert_eq!(
+        Duration::attoseconds(-600).round::<Femto>(),
+        Duration::femtoseconds(-1)
+    );
+    assert_eq!(
+        Duration::attoseconds(-400).round::<Femto>(),
+        Duration::femtoseconds(0)
+    );
+    assert_eq!(
+        Duration::attoseconds(-500).round::<Femto>(),
+        Duration::femtoseconds(-1)
+    );
+    assert_eq!(
+        Duration::attoseconds(500).round::<Femto>(),
+        Duration::femtoseconds(1)
+    );
+    assert_eq!(
+        Duration::attoseconds(-15).div_round(10),
+        Duration::attoseconds(-2)
+    );
+}
+
+#[cfg(kani)]
+mod proof_harness {
+    use super::*;
+
+    /// Verifies that `div_round_i128` never panics for non-zero denominators (except for the one
+    /// unrepresentable quotient) and always returns the nearest integer quotient.
+    #[kani::proof]
+    fn div_round_is_nearest() {
+        let numerator: i128 = kani::any();
+        let denominator: i128 = kani::any();
+        kani::assume(denominator != 0);
+        kani::assume(!(numerator == i128::MIN && denominator == -1));
+        let quotient = div_round_i128(numerator, denominator);
+        // |numerator - quotient * denominator| <= |denominator| / 2, evaluated without overflow.
+        let error = numerator.wrapping_sub(quotient.wrapping_mul(denominator));
+        kani::assert(
+            error.unsigned_abs() <= denominator.unsigned_abs() / 2,
+            "Rounded quotient must be nearest",
+        );
     }
 }
 
