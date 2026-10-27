@@ -8,6 +8,14 @@ use thiserror::Error;
 
 use crate::{Date, DurationDesignator, HistoricDate, Month};
 
+/// Error raised when an integer component of some string could not be parsed.
+///
+/// Wraps the underlying parser error, such that this type implements `core::error::Error`
+/// regardless of whether the `std` feature is enabled.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Error)]
+#[error("{0}")]
+pub struct IntegerParsingError(pub(crate) lexical_core::Error);
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Error)]
 #[error("{day} {month} {year} does not exist in the historic calendar")]
 pub struct InvalidHistoricDate {
@@ -122,7 +130,7 @@ pub enum InvalidGlonassDateTime {
 #[error("error parsing `HistoricDate`")]
 pub enum HistoricDateParsingError {
     #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
+    IntegerParsingError(#[from] IntegerParsingError),
     #[error(transparent)]
     InvalidHistoricDate(#[from] InvalidHistoricDate),
     #[error(transparent)]
@@ -143,7 +151,7 @@ pub enum HistoricDateParsingError {
 #[error("error parsing `GregorianDate`")]
 pub enum GregorianDateParsingError {
     #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
+    IntegerParsingError(#[from] IntegerParsingError),
     #[error(transparent)]
     InvalidGregorianDate(#[from] InvalidGregorianDate),
     #[error(transparent)]
@@ -164,7 +172,7 @@ pub enum GregorianDateParsingError {
 #[error("error parsing `JulianDate`")]
 pub enum JulianDateParsingError {
     #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
+    IntegerParsingError(#[from] IntegerParsingError),
     #[error(transparent)]
     InvalidJulianDate(#[from] InvalidJulianDate),
     #[error(transparent)]
@@ -185,7 +193,7 @@ pub enum JulianDateParsingError {
 #[error("error parsing `TimeOfDay`")]
 pub enum TimeOfDayParsingError {
     #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
+    IntegerParsingError(#[from] IntegerParsingError),
     #[error("hour representation must be exactly two digits")]
     HourRepresentationNotTwoDigits,
     #[error("expected but did not find hour-minute delimiter ':'")]
@@ -202,7 +210,7 @@ pub enum TimeOfDayParsingError {
 #[error("error parsing `Duration`")]
 pub enum DurationParsingError {
     #[error(transparent)]
-    IntegerParsingError(#[from] lexical_core::Error),
+    IntegerParsingError(#[from] IntegerParsingError),
     #[error("input string did not start with \'P\'")]
     ExpectedDurationPrefix,
     #[error("expected duration designator")]

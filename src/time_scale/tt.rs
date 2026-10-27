@@ -1,5 +1,10 @@
 //! Implementation of Terrestrial Time (TT).
 
+// Without `std`, floating-point functions are provided by `libm` via `num_traits::Float`. Test
+// builds always link `std`, which provides these functions already.
+#[cfg(not(any(feature = "std", test)))]
+use num_traits::Float;
+
 use crate::{
     Bdt, Date, Duration, FromTimeScale, Glonasst, Gpst, Gst, IntoTimeScale, Month, Qzsst, Tai, Tdb,
     TdbTime, TimePoint, Utc,

@@ -36,7 +36,7 @@ fn parse_years_duration(mut string: &str) -> Result<Duration, DurationParsingErr
         return parse_hours_duration(string, Duration::ZERO);
     }
 
-    let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+    let (count, consumed_bytes) = super::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
     if string.starts_with('.') {
         parse_years_fractional_duration(string, count)
@@ -54,7 +54,7 @@ fn parse_years_fractional_duration(
     count: i128,
 ) -> Result<Duration, DurationParsingError> {
     string = string.get(1..).unwrap();
-    let (subcount, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+    let (subcount, fractional_digits) = super::parse_partial(string.as_bytes())?;
     string = string.get(fractional_digits..).unwrap();
 
     let denominator = 10i128.pow(fractional_digits.try_into().unwrap());
@@ -123,7 +123,7 @@ fn parse_months_duration(
         return parse_hours_duration(string, duration);
     }
 
-    let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+    let (count, consumed_bytes) = super::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
     if string.starts_with('.') {
         parse_months_fractional_duration(string, duration, count)
@@ -141,7 +141,7 @@ fn parse_months_fractional_duration(
     count: i128,
 ) -> Result<Duration, DurationParsingError> {
     string = string.get(1..).unwrap();
-    let (subcount, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+    let (subcount, fractional_digits) = super::parse_partial(string.as_bytes())?;
     string = string.get(fractional_digits..).unwrap();
 
     let denominator = 10i128.pow(fractional_digits.try_into().unwrap());
@@ -227,7 +227,7 @@ fn parse_days_duration(
         return parse_hours_duration(string, duration);
     }
 
-    let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+    let (count, consumed_bytes) = super::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
     if string.starts_with('.') {
         parse_days_fractional_duration(string, duration, count)
@@ -245,7 +245,7 @@ fn parse_days_fractional_duration(
     count: i128,
 ) -> Result<Duration, DurationParsingError> {
     string = string.get(1..).unwrap();
-    let (subcount, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+    let (subcount, fractional_digits) = super::parse_partial(string.as_bytes())?;
     string = string.get(fractional_digits..).unwrap();
 
     let denominator = 10i128.pow(fractional_digits.try_into().unwrap());
@@ -326,7 +326,7 @@ fn parse_hours_duration(
         return Ok(duration);
     }
 
-    let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+    let (count, consumed_bytes) = super::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
     if string.starts_with('.') {
         parse_hours_fractional_duration(string, duration, count)
@@ -344,7 +344,7 @@ fn parse_hours_fractional_duration(
     count: i128,
 ) -> Result<Duration, DurationParsingError> {
     string = string.get(1..).unwrap();
-    let (subcount, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+    let (subcount, fractional_digits) = super::parse_partial(string.as_bytes())?;
     string = string.get(fractional_digits..).unwrap();
 
     let denominator = 10i128.pow(fractional_digits.try_into().unwrap());
@@ -423,7 +423,7 @@ fn parse_minutes_duration(
         return Ok(duration);
     }
 
-    let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+    let (count, consumed_bytes) = super::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
     if string.starts_with('.') {
         parse_minutes_fractional_duration(string, duration, count)
@@ -441,7 +441,7 @@ fn parse_minutes_fractional_duration(
     count: i128,
 ) -> Result<Duration, DurationParsingError> {
     string = string.get(1..).unwrap();
-    let (subcount, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+    let (subcount, fractional_digits) = super::parse_partial(string.as_bytes())?;
     string = string.get(fractional_digits..).unwrap();
 
     let denominator = 10i128.pow(fractional_digits.try_into().unwrap());
@@ -526,7 +526,7 @@ fn parse_seconds_duration(
         return Ok(duration);
     }
 
-    let (count, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+    let (count, consumed_bytes) = super::parse_partial(string.as_bytes())?;
     string = string.get(consumed_bytes..).unwrap();
     if string.starts_with('.') {
         parse_seconds_fractional_duration(string, duration, count)
@@ -544,7 +544,7 @@ fn parse_seconds_fractional_duration(
     count: i128,
 ) -> Result<Duration, DurationParsingError> {
     string = string.get(1..).unwrap();
-    let (subcount, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+    let (subcount, fractional_digits) = super::parse_partial(string.as_bytes())?;
     string = string.get(fractional_digits..).unwrap();
 
     let denominator = 10i128.pow(fractional_digits.try_into().unwrap());

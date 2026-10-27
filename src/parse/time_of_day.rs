@@ -26,7 +26,7 @@ impl TimeOfDay {
     /// anyway).
     pub(crate) fn parse_partial(mut string: &str) -> Result<(Self, &str), TimeOfDayParsingError> {
         // Parse hour component
-        let (hour, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+        let (hour, consumed_bytes) = super::parse_partial(string.as_bytes())?;
         if consumed_bytes != 2 {
             return Err(TimeOfDayParsingError::HourRepresentationNotTwoDigits);
         }
@@ -40,7 +40,7 @@ impl TimeOfDay {
         }
 
         // Parse minute component
-        let (minute, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+        let (minute, consumed_bytes) = super::parse_partial(string.as_bytes())?;
         if consumed_bytes != 2 {
             return Err(TimeOfDayParsingError::MinuteRepresentationNotTwoDigits);
         }
@@ -55,7 +55,7 @@ impl TimeOfDay {
 
         // Parse second component
         // First, we parse only the integer part
-        let (second, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+        let (second, consumed_bytes) = super::parse_partial(string.as_bytes())?;
         if consumed_bytes != 2 {
             return Err(TimeOfDayParsingError::IntegerSecondRepresentationNotTwoDigits);
         }
@@ -64,7 +64,7 @@ impl TimeOfDay {
         // Then, we parse the fractional remainder, if any
         let subseconds = if string.starts_with('.') {
             string = string.get(1..).unwrap();
-            let (fraction, fractional_digits) = lexical_core::parse_partial(string.as_bytes())?;
+            let (fraction, fractional_digits) = super::parse_partial(string.as_bytes())?;
             string = string.get(fractional_digits..).unwrap();
             let denominator = 10i128.pow(fractional_digits.try_into().unwrap());
             Duration::seconds(fraction).div_round(denominator)

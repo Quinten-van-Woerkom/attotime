@@ -1,6 +1,11 @@
 //! Implementation of Barycentric Dynamical Time (TDB), describing the proper time experienced by
 //! a clock at rest in a coordinate frame co-moving with the barycentre of the Solar system.
 
+// Without `std`, floating-point functions are provided by `libm` via `num_traits::Float`. Test
+// builds always link `std`, which provides these functions already.
+#[cfg(not(any(feature = "std", test)))]
+use num_traits::Float;
+
 use crate::{
     Date, Duration, FromTimeScale, IntoTimeScale, LiteralRatio, Month, Tcb, TcbTime,
     TerrestrialTime, TimePoint, Tt, TtTime,
@@ -216,8 +221,10 @@ fn roundtrip_tdb_tt_conversion_approximate() {
         let tt: TtTime = tdb.approximate_tt();
         let tdb2 = tt.approximate_tdb();
         let difference = (tdb2 - tdb).abs();
-        println!("Difference: {difference}");
-        assert!(difference < Duration::nanoseconds(1));
+        assert!(
+            difference < Duration::nanoseconds(1),
+            "Difference: {difference}"
+        );
     }
 }
 
@@ -234,8 +241,10 @@ fn roundtrip_tdb_tt_conversion() {
         let tt = TtTime::from_tdb(tdb);
         let tdb2 = TdbTime::from_tt(tt);
         let difference = (tdb2 - tdb).abs();
-        println!("Difference: {difference}");
-        assert!(difference < Duration::picoseconds(1));
+        assert!(
+            difference < Duration::picoseconds(1),
+            "Difference: {difference}"
+        );
     }
 }
 

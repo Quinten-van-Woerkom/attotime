@@ -34,7 +34,7 @@ impl JulianDate {
     #[allow(clippy::missing_panics_doc, reason = "Internal error panics only")]
     pub fn parse_partial(mut string: &str) -> Result<(Self, &str), JulianDateParsingError> {
         // Parse year component
-        let (year, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+        let (year, consumed_bytes) = super::parse_partial(string.as_bytes())?;
         string = string.get(consumed_bytes..).unwrap();
 
         // Parse year-month delimiter
@@ -44,7 +44,7 @@ impl JulianDate {
             return Err(JulianDateParsingError::ExpectedYearMonthDelimiter);
         }
 
-        let (month, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+        let (month, consumed_bytes) = super::parse_partial(string.as_bytes())?;
         if consumed_bytes != 2 {
             return Err(JulianDateParsingError::MonthRepresentationNotTwoDigits);
         }
@@ -59,7 +59,7 @@ impl JulianDate {
         }
 
         // Parse day component
-        let (day, consumed_bytes) = lexical_core::parse_partial(string.as_bytes())?;
+        let (day, consumed_bytes) = super::parse_partial(string.as_bytes())?;
         if consumed_bytes != 2 {
             return Err(JulianDateParsingError::DayRepresentationNotTwoDigits);
         }
