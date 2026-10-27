@@ -25,7 +25,7 @@ impl FractionalDigitsIterator {
         precision: Option<usize>,
         base: u8,
     ) -> Self {
-        let count = if count >= 0 { count } else { -count };
+        let count = count.abs();
         let numerator = numerator * count;
         Self {
             remainder: numerator % denominator,
