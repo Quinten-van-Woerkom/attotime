@@ -208,6 +208,26 @@ fn week_days() {
 }
 
 #[cfg(kani)]
+impl Date {
+    /// Returns an arbitrary date for use in proof harnesses whose verification over the full range
+    /// of `Date` is too expensive to run routinely: the calendar computations consist of chains
+    /// of wide divisions, which are hard for SAT solvers.
+    ///
+    /// By default, dates are restricted to about 10,000 years around 1970: this still covers many
+    /// whole calendar cycles (of 4 and 400 years) on both sides of the epoch, as well as all
+    /// sign changes in the intermediate computations. Setting the `ATTOTIME_KANI_FULL_RANGE`
+    /// environment variable at compile time lifts this restriction.
+    pub(crate) fn any_in_proof_range() -> Self {
+        const MAX_DAYS_FROM_EPOCH: u32 = 3_660_000;
+        let date: Self = kani::any();
+        if option_env!("ATTOTIME_KANI_FULL_RANGE").is_none() {
+            kani::assume(date.time_since_epoch().count().unsigned_abs() <= MAX_DAYS_FROM_EPOCH);
+        }
+        date
+    }
+}
+
+#[cfg(kani)]
 mod infallibility {
     use super::*;
 
@@ -219,7 +239,7 @@ mod infallibility {
 
     #[kani::proof]
     fn historic_date_roundtrip() {
-        let date: Date = kani::any();
+        let date = Date::any_in_proof_range();
         let historic_date = HistoricDate::from_date(date);
         let year = historic_date.year();
         let month = historic_date.month();
@@ -230,7 +250,7 @@ mod infallibility {
 
     #[kani::proof]
     fn gregorian_date_roundtrip() {
-        let date: Date = kani::any();
+        let date = Date::any_in_proof_range();
         let gregorian_date = GregorianDate::from_date(date);
         let year = gregorian_date.year();
         let month = gregorian_date.month();
@@ -241,7 +261,7 @@ mod infallibility {
 
     #[kani::proof]
     fn julian_date_roundtrip() {
-        let date: Date = kani::any();
+        let date = Date::any_in_proof_range();
         let julian_date = JulianDate::from_date(date);
         let year = julian_date.year();
         let month = julian_date.month();

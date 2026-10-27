@@ -75,7 +75,7 @@ msrv:
   script:
     - cargo check --all-features
 
-kani:
+.kani:
   stage: verify
   cache:
     # Bump the version suffix to discard a cache in which `.cargo/bin` lacks the install metadata.
@@ -91,4 +91,19 @@ kani:
     - cargo install --locked kani-verifier
     - cargo kani setup
   script:
-    - cargo kani
+    # Harnesses are independent, so verify them in parallel on all available cores.
+    - cargo kani --jobs "$(nproc)" --output-format terse
+
+# Calendar proofs are restricted to about 10,000 years around 1970, which keeps this job fast
+# enough to run on every pipeline.
+kani:
+  extends: .kani
+
+# Verifies the calendar proofs over the full range of `Date`. This takes too long to run on every
+# pipeline, so it runs only in scheduled pipelines.
+kani-full:
+  extends: .kani
+  variables:
+    ATTOTIME_KANI_FULL_RANGE: "1"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"

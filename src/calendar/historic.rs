@@ -339,7 +339,7 @@ mod proof_harness {
     /// `Date`: no panics, undefined behaviour, or arithmetic errors.
     #[kani::proof]
     fn date_conversion_well_defined() {
-        let date: Date = kani::any();
+        let date = Date::any_in_proof_range();
         let historic_date = HistoricDate::from_date(date);
         let _ = historic_date.into_date();
     }

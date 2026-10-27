@@ -274,23 +274,34 @@ impl Duration {
     }
 }
 
-/// Integer division that rounds to the nearest integer, with ties rounded away from zero. Correct
-/// for all signs of numerator and denominator, and does not overflow for any inputs for which the
-/// quotient itself is representable.
-const fn div_round_i128(numerator: i128, denominator: i128) -> i128 {
-    let quotient = numerator / denominator;
-    let remainder = (numerator % denominator).unsigned_abs();
-    // Equivalent to `2 * |remainder| >= |denominator|`, but cannot overflow.
-    if remainder >= denominator.unsigned_abs() - remainder {
-        if (numerator < 0) == (denominator < 0) {
-            quotient + 1
-        } else {
-            quotient - 1
+/// Defines an integer division that rounds to the nearest integer, with ties rounded away from
+/// zero. Correct for all signs of numerator and denominator, and does not overflow for any inputs
+/// for which the quotient itself is representable.
+///
+/// Defined as macro such that Kani can verify the exact same algorithm on a narrower integer type:
+/// verifying it directly on `i128` is intractable, because of the size of 128-bit division.
+macro_rules! define_div_round {
+    ($name:ident, $int:ty) => {
+        const fn $name(numerator: $int, denominator: $int) -> $int {
+            let quotient = numerator / denominator;
+            let remainder = (numerator % denominator).unsigned_abs();
+            // Equivalent to `2 * |remainder| >= |denominator|`, but cannot overflow.
+            if remainder >= denominator.unsigned_abs() - remainder {
+                if (numerator < 0) == (denominator < 0) {
+                    quotient + 1
+                } else {
+                    quotient - 1
+                }
+            } else {
+                quotient
+            }
         }
-    } else {
-        quotient
-    }
+    };
 }
+
+define_div_round!(div_round_i128, i128);
+#[cfg(kani)]
+define_div_round!(div_round_i16, i16);
 
 /// Verifies that rounding division results in the nearest integer for all sign combinations,
 /// including ties.
@@ -335,15 +346,17 @@ fn rounding_division() {
 mod proof_harness {
     use super::*;
 
-    /// Verifies that `div_round_i128` never panics for non-zero denominators (except for the one
-    /// unrepresentable quotient) and always returns the nearest integer quotient.
+    /// Verifies that the rounding division algorithm never panics for non-zero denominators
+    /// (except for the one unrepresentable quotient) and always returns the nearest integer
+    /// quotient. Checked on `i16`, which covers the same edge cases (signs, ties, and extremes of
+    /// the integer range) as `i128`, but is tractable for exhaustive verification.
     #[kani::proof]
     fn div_round_is_nearest() {
-        let numerator: i128 = kani::any();
-        let denominator: i128 = kani::any();
+        let numerator: i16 = kani::any();
+        let denominator: i16 = kani::any();
         kani::assume(denominator != 0);
-        kani::assume(!(numerator == i128::MIN && denominator == -1));
-        let quotient = div_round_i128(numerator, denominator);
+        kani::assume(!(numerator == i16::MIN && denominator == -1));
+        let quotient = div_round_i16(numerator, denominator);
         // |numerator - quotient * denominator| <= |denominator| / 2, evaluated without overflow.
         let error = numerator.wrapping_sub(quotient.wrapping_mul(denominator));
         kani::assert(
