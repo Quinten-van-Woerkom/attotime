@@ -8,8 +8,11 @@ pub trait UnitRatio {
 }
 
 /// Unit that is described as an exact ratio with respect to unity.
+///
+/// This type is only ever used at the type level, so it wraps an uninhabited type to ensure that
+/// it cannot be instantiated.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum LiteralRatio<const ATTOSECONDS: i128> {}
+pub struct LiteralRatio<const ATTOSECONDS: i128>(core::convert::Infallible);
 
 impl<const ATTOSECONDS: i128> UnitRatio for LiteralRatio<ATTOSECONDS> {
     const ATTOSECONDS: i128 = ATTOSECONDS;
