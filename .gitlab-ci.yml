@@ -24,6 +24,18 @@ fmt:
   script:
     - cargo fmt --check
 
+deny:
+  stage: check
+  cache:
+    key: $CI_JOB_NAME
+    paths:
+      - .cargo/bin
+      - .cargo/registry
+  before_script:
+    - cargo install --locked cargo-deny
+  script:
+    - cargo deny check
+
 clippy:
   stage: check
   parallel:
