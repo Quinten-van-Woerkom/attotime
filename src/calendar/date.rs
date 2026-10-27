@@ -23,13 +23,19 @@ use crate::{
 /// choice is made to prevent errors due to leap seconds, which cannot be incorporated in a
 /// purely calendrical type. Rather, a date must be mapped towards a proper time scale first,
 /// before such arithmetic is possible. It is possible to add full days to a `Date`.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, derive_more::Constructor)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(kani, derive(kani::Arbitrary))]
 pub struct Date {
     days: Days,
 }
 
 impl Date {
+    /// Creates a date from the given number of days since 1970-01-01.
+    #[must_use]
+    pub const fn new(days: Days) -> Self {
+        Self { days }
+    }
+
     /// Creates a date from the given number of days since 1970-01-01.
     #[must_use]
     pub const fn from_time_since_epoch(days: Days) -> Self {
