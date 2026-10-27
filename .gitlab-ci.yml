@@ -27,9 +27,13 @@ fmt:
 deny:
   stage: check
   cache:
-    key: $CI_JOB_NAME
+    # Bump the version suffix to discard a cache in which `.cargo/bin` lacks the install metadata.
+    key: $CI_JOB_NAME-v2
     paths:
+      # `cargo install` needs its metadata files to recognise binaries restored from the cache.
       - .cargo/bin
+      - .cargo/.crates.toml
+      - .cargo/.crates2.json
       - .cargo/registry
   before_script:
     - cargo install --locked cargo-deny
@@ -74,9 +78,13 @@ msrv:
 kani:
   stage: verify
   cache:
-    key: $CI_JOB_NAME
+    # Bump the version suffix to discard a cache in which `.cargo/bin` lacks the install metadata.
+    key: $CI_JOB_NAME-v2
     paths:
+      # `cargo install` needs its metadata files to recognise binaries restored from the cache.
       - .cargo/bin
+      - .cargo/.crates.toml
+      - .cargo/.crates2.json
       - .cargo/registry
       - target
   before_script:
