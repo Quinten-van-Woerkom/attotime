@@ -3,15 +3,17 @@
 use num_traits::ConstZero;
 
 use crate::{
-    Bdt, Date, Days, Duration, FromDateTime, FromTimeScale, Glonasst, Gpst, Gst, IntoDateTime,
-    IntoTimeScale, LeapSecondProvider, Month, Qzsst, Second, StaticLeapSecondProvider, Tai,
-    TerrestrialTime, TimePoint, Tt,
+    Bdt, Date, Days, Duration, FromTimeScale, Glonasst, Gpst, Gst, IntoTimeScale,
+    LeapSecondProvider, Month, Qzsst, Second, Tai, TerrestrialTime, TimePoint, Tt,
     errors::{InvalidTimeOfDay, InvalidUtcDateTime},
     time_scale::{
         AbsoluteTimeScale, TimeScale, terrestrial_time::impl_terrestrial_time_conversion,
     },
     units::{SecondsPerDay, SecondsPerHour, SecondsPerMinute},
 };
+
+#[cfg(test)]
+use crate::FromDateTime;
 
 pub type UtcTime = TimePoint<Utc>;
 
@@ -85,10 +87,16 @@ impl TerrestrialTime for Utc {
     const TAI_OFFSET: Duration = Duration::ZERO;
 }
 
-impl FromDateTime for UtcTime {
+impl crate::FromLeapSecondDateTime for UtcTime {
     type Error = InvalidUtcDateTime;
 
-    fn from_datetime(date: Date, hour: u8, minute: u8, second: u8) -> Result<Self, Self::Error> {
+    fn from_datetime(
+        date: Date,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        leap_second_provider: &impl LeapSecondProvider,
+    ) -> Result<Self, Self::Error> {
         if hour > 23 || minute > 59 || second > 60 {
             return Err(InvalidUtcDateTime::InvalidTimeOfDay(InvalidTimeOfDay {
                 hour,
@@ -97,7 +105,7 @@ impl FromDateTime for UtcTime {
             }));
         }
 
-        let (is_leap_second, leap_seconds) = StaticLeapSecondProvider {}.leap_seconds_on_date(date);
+        let (is_leap_second, leap_seconds) = leap_second_provider.leap_seconds_on_date(date);
         if second == 60 && !is_leap_second {
             return Err(InvalidUtcDateTime::NonLeapSecondDateTime {
                 date,
@@ -125,12 +133,12 @@ impl FromDateTime for UtcTime {
     }
 }
 
-impl IntoDateTime for UtcTime {
-    fn into_datetime(self) -> (Date, u8, u8, u8) {
+impl crate::IntoLeapSecondDateTime for UtcTime {
+    fn into_datetime(self, leap_second_provider: &impl LeapSecondProvider) -> (Date, u8, u8, u8) {
         // Step-by-step factoring of the time since epoch into days, hours, minutes, and seconds.
         let seconds_since_scale_epoch = self.time_since_epoch();
 
-        let (is_leap_second, leap_seconds) = StaticLeapSecondProvider {}.leap_seconds_at_time(self);
+        let (is_leap_second, leap_seconds) = leap_second_provider.leap_seconds_at_time(self);
 
         let seconds_since_scale_epoch =
             seconds_since_scale_epoch - Duration::seconds(leap_seconds.into());
@@ -281,5 +289,69 @@ fn datetime_roundtrip_near_leap_seconds() {
             assert_eq!(datetime.2, minute);
             assert_eq!(datetime.3, second);
         }
+    }
+}
+
+/// Verifies that a user-provided leap second provider is used when converting between UTC
+/// date-times and time points, rather than the built-in static table.
+#[test]
+fn custom_leap_second_provider() {
+    use crate::{FromLeapSecondDateTime, HistoricDate, IntoLeapSecondDateTime};
+
+    /// Provider that announces a (fictional) leap second at the end of 2030-06-30, on top of the
+    /// leap seconds known in the static table.
+    struct FutureLeapSecondProvider;
+
+    impl LeapSecondProvider for FutureLeapSecondProvider {
+        fn leap_seconds_on_date(&self, utc_date: Date) -> (bool, i32) {
+            let leap_date: Date = HistoricDate::new(2030, Month::June, 30).unwrap().into();
+            match utc_date.cmp(&leap_date) {
+                core::cmp::Ordering::Less => (false, 37),
+                core::cmp::Ordering::Equal => (true, 37),
+                core::cmp::Ordering::Greater => (false, 38),
+            }
+        }
+
+        fn leap_seconds_at_time(&self, utc_time: UtcTime) -> (bool, i32) {
+            let leap_second = UtcTime::from_time_since_epoch(Duration::seconds(1_846_022_437));
+            if utc_time < leap_second {
+                (false, 37)
+            } else if utc_time < leap_second + Duration::seconds(1) {
+                (true, 37)
+            } else {
+                (false, 38)
+            }
+        }
+    }
+
+    let provider = FutureLeapSecondProvider;
+    let date: Date = HistoricDate::new(2030, Month::June, 30).unwrap().into();
+    let next_date: Date = HistoricDate::new(2030, Month::July, 1).unwrap().into();
+
+    // The static table does not know about this leap second, but the custom provider does.
+    assert!(<UtcTime as FromDateTime>::from_datetime(date, 23, 59, 60).is_err());
+    let before =
+        <UtcTime as FromLeapSecondDateTime>::from_datetime(date, 23, 59, 59, &provider).unwrap();
+    let leap_second =
+        <UtcTime as FromLeapSecondDateTime>::from_datetime(date, 23, 59, 60, &provider).unwrap();
+    let after =
+        <UtcTime as FromLeapSecondDateTime>::from_datetime(next_date, 0, 0, 0, &provider).unwrap();
+    assert_eq!(leap_second - before, Duration::seconds(1));
+    assert_eq!(after - leap_second, Duration::seconds(1));
+    assert_eq!(
+        after - <UtcTime as FromDateTime>::from_datetime(next_date, 0, 0, 0).unwrap(),
+        Duration::seconds(1)
+    );
+
+    // Round trip through the same provider.
+    for (time, expected) in [
+        (before, (date, 23, 59, 59)),
+        (leap_second, (date, 23, 59, 60)),
+        (after, (next_date, 0, 0, 0)),
+    ] {
+        assert_eq!(
+            IntoLeapSecondDateTime::into_datetime(time, &provider),
+            expected
+        );
     }
 }

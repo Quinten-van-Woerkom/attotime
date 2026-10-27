@@ -1,8 +1,9 @@
 //! Implementation of the concept of date and time-of-day within a time scale.
 
 use crate::{
-    Date, Days, Duration, Second, SecondsPerDay, SecondsPerHour, SecondsPerMinute, TimePoint,
-    errors::InvalidTimeOfDay, time_scale::AbsoluteTimeScale,
+    Date, Days, Duration, FromLeapSecondDateTime, IntoLeapSecondDateTime, LeapSecondProvider,
+    Second, SecondsPerDay, SecondsPerHour, SecondsPerMinute, TimePoint, errors::InvalidTimeOfDay,
+    time_scale::AbsoluteTimeScale,
 };
 
 /// Uniform date-time scale
@@ -34,13 +35,22 @@ pub trait FromDateTime: Sized {
     fn from_datetime(date: Date, hour: u8, minute: u8, second: u8) -> Result<Self, Self::Error>;
 }
 
-impl<Scale> FromDateTime for TimePoint<Scale>
+/// Uniform date-time scales do not apply leap seconds, so the leap second provider is ignored. We
+/// implement `FromLeapSecondDateTime` rather than `FromDateTime` directly, such that `FromDateTime`
+/// may be derived via a single blanket implementation for all time scales.
+impl<Scale> FromLeapSecondDateTime for TimePoint<Scale>
 where
     Scale: ?Sized + UniformDateTimeScale,
 {
     type Error = InvalidTimeOfDay;
 
-    fn from_datetime(date: Date, hour: u8, minute: u8, second: u8) -> Result<Self, Self::Error> {
+    fn from_datetime(
+        date: Date,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        _leap_second_provider: &impl LeapSecondProvider,
+    ) -> Result<Self, Self::Error> {
         if hour >= 24 || minute >= 60 || second >= 60 {
             return Err(InvalidTimeOfDay {
                 hour,
@@ -91,11 +101,12 @@ pub trait IntoDateTime: Sized {
     fn into_datetime(self) -> (Date, u8, u8, u8);
 }
 
-impl<Scale> IntoDateTime for TimePoint<Scale>
+/// As for `FromLeapSecondDateTime`, the leap second provider is ignored for uniform scales.
+impl<Scale> IntoLeapSecondDateTime for TimePoint<Scale>
 where
     Scale: ?Sized + UniformDateTimeScale,
 {
-    fn into_datetime(self) -> (Date, u8, u8, u8) {
+    fn into_datetime(self, _leap_second_provider: &impl LeapSecondProvider) -> (Date, u8, u8, u8) {
         // Step-by-step factoring of the time since epoch into days, hours, minutes, and seconds.
         let seconds_since_scale_epoch = self.time_since_epoch();
         let (days_since_scale_epoch, seconds_in_day) = {
